@@ -142,6 +142,7 @@ router.post("/signin", async (req: Request, res: Response) => {
       .maybeSingle();
 
     if (error || !profile?.email) {
+      console.error("Username lookup failed:", error || "Profile not found");
       return res.status(401).json({ success: false, message: "Invalid username or password." });
     }
 
@@ -154,6 +155,7 @@ router.post("/signin", async (req: Request, res: Response) => {
   });
 
   if (error) {
+    console.error("Sign-in error:", error.message);
     return res.status(401).json({ success: false, message: "Invalid username or password." });
   }
 
@@ -198,6 +200,7 @@ router.post("/register", async (req: Request, res: Response) => {
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password: body.password_Register,
+    email_confirm: true,
     user_metadata: {
       username,
       handedness: body.handedness_Register,
