@@ -15,6 +15,7 @@ export interface RegisterRequest {
   email_Register: string;
   password_Register: string;
   confirmPassword_Register: string;
+  phoneNumber_Register?: string;
   rating_Register?: number;
 }
 

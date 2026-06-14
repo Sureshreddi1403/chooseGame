@@ -227,6 +227,7 @@ router.post("/register", async (req: Request, res: Response) => {
       handedness: body.handedness_Register,
       gender: body.gender_Register,
       rating: body.rating_Register ?? 3,
+      phone_number: body.phoneNumber_Register || null,
       is_active: true,
     });
 

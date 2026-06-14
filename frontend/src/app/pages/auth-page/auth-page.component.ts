@@ -323,6 +323,7 @@ export class AuthPageComponent implements OnDestroy {
                 email_Register: form.email_Register!,
                 password_Register: form.password_Register!,
                 confirmPassword_Register: form.confirmPassword_Register!,
+                phoneNumber_Register: form.phoneNumber_Register!,
               })
               .subscribe({
                 next: () => {

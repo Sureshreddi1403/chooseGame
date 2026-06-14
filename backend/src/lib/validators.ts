@@ -13,6 +13,7 @@ export interface RegisterBody {
   username_Register: string;
   handedness_Register: 'left' | 'right';
   gender_Register: string;
+  email_Register: string;
   password_Register: string;
   confirmPassword_Register: string;
   phoneNumber_Register?: string;
