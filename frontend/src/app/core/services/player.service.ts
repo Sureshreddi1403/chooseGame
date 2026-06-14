@@ -21,6 +21,9 @@ export interface PlayerProfile extends Player {
   last_name?: string;
   gender?: string;
   handedness?: string;
+  city?: string;
+  state?: string;
+  phone_number?: string;
   is_discoverable?: boolean;
   created_at?: string;
 }
@@ -33,6 +36,9 @@ export interface ProfileUpdatePayload {
   player_lat?: number | null;
   player_lng?: number | null;
   player_location_label?: string;
+  city?: string;
+  state?: string;
+  phone_number?: string;
   is_discoverable?: boolean;
 }
 
@@ -60,7 +66,7 @@ export class PlayerService {
   }
 
   getProfile(userId: string): Observable<ProfileResponse> {
-    return this.http.get<ProfileResponse>(`${this.api}/profile/${userId}`);
+    return this.http.get<ProfileResponse>(`${this.api}/profile/${userId}?t=${Date.now()}`);
   }
 
   updateProfile(payload: ProfileUpdatePayload): Observable<ProfileResponse> {

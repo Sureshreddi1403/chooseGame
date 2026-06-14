@@ -42,6 +42,9 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
   playerLat: number | null = null;
   playerLng: number | null = null;
   locationLabel = '';
+  city = '';
+  state = '';
+  phoneNumber = '';
   isDiscoverable = false;
 
   /* ── Map ── */
@@ -105,6 +108,9 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
         this.playerLat = res.data.player_lat ?? null;
         this.playerLng = res.data.player_lng ?? null;
         this.locationLabel = res.data.player_location_label ?? '';
+        this.city = res.data.city ?? '';
+        this.state = res.data.state ?? '';
+        this.phoneNumber = res.data.phone_number ?? '';
         this.isDiscoverable = res.data.is_discoverable ?? false;
         this.loading.set(false);
       },
@@ -287,6 +293,9 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
       player_lat: this.playerLat,
       player_lng: this.playerLng,
       player_location_label: this.locationLabel,
+      city: this.city,
+      state: this.state,
+      phone_number: this.phoneNumber,
       is_discoverable: this.isDiscoverable,
     };
 
@@ -294,6 +303,8 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
       next: () => {
         this.saving.set(false);
         this.saveSuccess.set(true);
+        // Reload profile from server so the UI always reflects persisted data
+        this.loadProfile();
         setTimeout(() => this.saveSuccess.set(false), 4000);
       },
       error: (err) => {

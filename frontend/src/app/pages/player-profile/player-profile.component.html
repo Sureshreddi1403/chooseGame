@@ -105,6 +105,46 @@
         <div class="char-count">{{ bio.length }}/400</div>
       </section>
 
+      <!-- ── Contact & Location Details ── -->
+      <section class="editor-section">
+        <h3 class="section-title">
+          <span class="section-icon">📞</span> Contact Details
+        </h3>
+        <div class="field-row">
+          <div class="field">
+            <label for="profile-phone">Phone Number</label>
+            <input
+              id="profile-phone"
+              type="tel"
+              class="profile-input"
+              [(ngModel)]="phoneNumber"
+              placeholder="e.g. +1 234 567 8900"
+            />
+          </div>
+          <div class="field">
+            <label for="profile-city">City</label>
+            <input
+              id="profile-city"
+              type="text"
+              class="profile-input"
+              [(ngModel)]="city"
+              placeholder="e.g. New York"
+            />
+          </div>
+          <div class="field">
+            <label for="profile-state">State</label>
+            <input
+              id="profile-state"
+              type="text"
+              class="profile-input"
+              [(ngModel)]="state"
+              placeholder="e.g. NY"
+              maxlength="2"
+            />
+          </div>
+        </div>
+      </section>
+
       <!-- ── Skill level ── -->
       <section class="editor-section">
         <h3 class="section-title">

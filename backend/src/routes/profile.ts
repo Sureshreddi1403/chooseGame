@@ -14,7 +14,7 @@ router.get("/:userId", async (req: Request, res: Response) => {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "id, username, first_name, last_name, bio, skill_level, sport_preferences, rating, player_lat, player_lng, player_location_label, is_discoverable, gender, handedness, created_at"
+      "id, username, first_name, last_name, bio, skill_level, sport_preferences, rating, player_lat, player_lng, player_location_label, city, state, phone_number, is_discoverable, gender, handedness, created_at"
     )
     .eq("id", userId)
     .single();
@@ -43,6 +43,9 @@ router.put("/", async (req: Request, res: Response) => {
     player_lat,
     player_lng,
     player_location_label,
+    city,
+    state,
+    phone_number,
     is_discoverable,
   } = req.body as {
     userId?: string;
@@ -52,6 +55,9 @@ router.put("/", async (req: Request, res: Response) => {
     player_lat?: number | null;
     player_lng?: number | null;
     player_location_label?: string;
+    city?: string;
+    state?: string;
+    phone_number?: string;
     is_discoverable?: boolean;
   };
 
@@ -69,6 +75,9 @@ router.put("/", async (req: Request, res: Response) => {
   if (player_lat !== undefined)            updatePayload["player_lat"] = player_lat;
   if (player_lng !== undefined)            updatePayload["player_lng"] = player_lng;
   if (player_location_label !== undefined) updatePayload["player_location_label"] = player_location_label;
+  if (city !== undefined)                  updatePayload["city"] = city;
+  if (state !== undefined)                 updatePayload["state"] = state;
+  if (phone_number !== undefined)          updatePayload["phone_number"] = phone_number;
   if (is_discoverable !== undefined)       updatePayload["is_discoverable"] = is_discoverable;
 
   const { data, error } = await supabase
