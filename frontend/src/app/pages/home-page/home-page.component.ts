@@ -102,12 +102,14 @@ export class HomePageComponent implements OnInit {
       const { latitude, longitude } = pos.coords;
       this._userLat = latitude;
       this._userLng = longitude;
+      console.log('User location:', { latitude, longitude });
 
       this.nearby = await this.venueService.list({
         lat: latitude,
         lng: longitude,
         radiusKm: 10,
       });
+      console.log('Nearby venues from API:', this.nearby);
       this.showingNearby = true;
       this.filteredVenues = [...this.nearby];
 
@@ -142,18 +144,23 @@ export class HomePageComponent implements OnInit {
       const request = {
         location: { lat: this._userLat, lng: this._userLng },
         radius: 10000,
-        keyword: 'sports complex',
+        keyword: 'sports complex|court|stadium|arena',
       };
+
+      console.log('Google Places search request:', request);
 
       const results: any[] = await new Promise((resolve, reject) => {
         service.nearbySearch(request, (places: any, status: any) => {
-          if (status === 'OK') {
-            resolve(places);
+          console.log('Google Places response:', { status, placesCount: places?.length });
+          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK) {
+            resolve(places || []);
           } else {
             reject(status);
           }
         });
       });
+
+      console.log('Processing', results.length, 'places from Google Maps');
 
       this.nearby = results.map((place) => ({
         id: place.place_id,
@@ -166,6 +173,8 @@ export class HomePageComponent implements OnInit {
         distance: this.distanceKm(this._userLat, this._userLng, place.geometry?.location?.lat?.(), place.geometry?.location?.lng?.()),
         games_available: ['Basketball', 'Tennis', 'Soccer', 'Volleyball'],
       }));
+
+      console.log('Mapped venues:', this.nearby);
 
       this.showingNearby = true;
       this.filteredVenues = [...this.nearby];

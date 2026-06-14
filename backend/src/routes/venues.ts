@@ -20,6 +20,7 @@ function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 // GET /api/venues  -> returns active venues, optionally filtered by location
 router.get("/", async (req: Request, res: Response) => {
   const { lat, lng, radiusKm } = req.query;
+  console.log('Venues API called with:', { lat, lng, radiusKm });
   const radius = Number(radiusKm ?? 10);
 
   const { data, error } = await supabase
@@ -31,24 +32,29 @@ router.get("/", async (req: Request, res: Response) => {
   if (error) return res.status(500).json({ success: false, message: error.message });
 
   let venues = data || [];
+  console.log('Total venues in DB:', venues.length);
 
   if (lat && lng) {
     const latitude = Number(lat);
     const longitude = Number(lng);
+    console.log('Filtering venues by location:', { latitude, longitude, radius });
     if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) {
       venues = venues
-        .map((venue: any) => ({
-          ...venue,
-          distance: venue.latitude && venue.longitude
-            ? distanceKm(latitude, longitude, Number(venue.latitude), Number(venue.longitude))
-            : null,
-        }))
+        .map((venue: any) => {
+          const venueLat = Number(venue.latitude);
+          const venueLng = Number(venue.longitude);
+          if (!venue.latitude || !venue.longitude) return { ...venue, distance: null };
+          const dist = distanceKm(latitude, longitude, venueLat, venueLng);
+          console.log(`Venue ${venue.name}: ${dist.toFixed(2)} km`);
+          return { ...venue, distance: dist };
+        })
         .filter((venue: any) => venue.distance === null || venue.distance <= radius)
         .sort((a: any, b: any) => (a.distance ?? 999999) - (b.distance ?? 999999));
+      console.log('Filtered venues count:', venues.length);
     }
   }
 
-  return res.json({ success: true, data: venues });
+  res.json({ success: true, data: venues });
 });
 
 export default router;
