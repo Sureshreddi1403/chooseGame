@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { PlayerService, PlayerProfile, ProfileUpdatePayload } from '../../core/services/player.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
 interface SportOption {
   label: string;
@@ -15,7 +16,7 @@ interface SportOption {
 @Component({
   selector: 'app-player-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RequestsBoardComponent],
   templateUrl: './player-profile.component.html',
   styleUrl: './player-profile.component.scss',
 })
@@ -33,6 +34,7 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
   gpsLoading = signal(false);
   gpsError = signal('');
   mapReady = signal(false);
+  showRequestsSidebar = false;
 
   /* ── Form model ── */
   profile: Partial<PlayerProfile> = {};
@@ -312,6 +314,10 @@ export class PlayerProfileComponent implements OnInit, OnDestroy {
         this.saveError.set(err.error?.message ?? 'Failed to save profile. Please try again.');
       },
     });
+  }
+
+  toggleRequests() {
+    this.showRequestsSidebar = !this.showRequestsSidebar;
   }
 
   /* ── Helpers ── */

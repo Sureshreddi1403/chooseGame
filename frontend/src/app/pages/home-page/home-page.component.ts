@@ -6,6 +6,7 @@ import { VenueService, Venue } from '../../core/services/venue.service';
 import { PlayRequestService, PlayRequest } from '../../core/services/play-request.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
 interface ChatMessage {
   author: string;
@@ -25,7 +26,7 @@ interface ChatThread {
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RequestsBoardComponent],
 })
 export class HomePageComponent implements OnInit {
   private venueService = inject(VenueService);
@@ -51,6 +52,10 @@ export class HomePageComponent implements OnInit {
   showingNearby = false;
   searchQuery = '';
   environmentKey = !!environment.googleMapsApiKey;
+  private _autocompleteLoaded = false;
+
+  // Notifications Sidebar
+  showRequestsSidebar = false;
 
   playRequestMessage = '';
   playRequestError = '';
@@ -78,8 +83,7 @@ export class HomePageComponent implements OnInit {
         games_available: venue.games_available ?? ['Basketball', 'Tennis', 'Soccer', 'Volleyball'],
       }));
       this.filteredVenues = [...this.venues];
-      await this.loadNearbyCourts();
-      await this.initMap();
+      await this.searchMapVenues();
     } catch (e) {
       console.error(e);
     } finally {
@@ -87,50 +91,31 @@ export class HomePageComponent implements OnInit {
     }
   }
 
-  async loadNearbyCourts() {
-    if (!navigator.geolocation) {
-      this.locationError = 'Geolocation is not supported by your browser.';
-      return;
-    }
 
-    this.locationLoading = true;
-    this.locationError = '';
-
-    try {
-      const pos = await new Promise<GeolocationPosition>((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej)
-      );
-
-      const { latitude, longitude } = pos.coords;
-      this._userLat = latitude;
-      this._userLng = longitude;
-
-      this.nearby = await this.venueService.list({
-        lat: latitude,
-        lng: longitude,
-        radiusKm: 10,
-      });
-      this.showingNearby = true;
-      this.filteredVenues = [...this.nearby];
-
-      this.applySearch();
-      await this.initMap();
-    } catch (error: any) {
-      this.locationError =
-        error?.message || 'Unable to determine your location. Please allow location access.';
-    } finally {
-      this.locationLoading = false;
-    }
-  }
 
   async searchMapVenues() {
-    if (this._userLat == null || this._userLng == null) {
-      this.locationError = 'Please allow location access first by clicking Use my location.';
-      return;
-    }
-
     this.locationLoading = true;
     this.locationError = '';
+
+    if (this._userLat == null || this._userLng == null) {
+      if (navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((res, rej) =>
+            navigator.geolocation.getCurrentPosition(res, rej)
+          );
+          this._userLat = pos.coords.latitude;
+          this._userLng = pos.coords.longitude;
+        } catch (e) {
+          this.locationError = 'Please allow location access to find nearby venues.';
+          this.locationLoading = false;
+          return;
+        }
+      } else {
+        this.locationError = 'Geolocation is not supported by your browser.';
+        this.locationLoading = false;
+        return;
+      }
+    }
 
     try {
       const google = (window as any).google;
@@ -306,6 +291,26 @@ export class HomePageComponent implements OnInit {
           title: v.name,
         });
       });
+
+      if (!this._autocompleteLoaded) {
+        const input = document.getElementById('home-search-input') as HTMLInputElement;
+        if (input) {
+          const autocomplete = new (window as any).google.maps.places.Autocomplete(input, {
+            fields: ['geometry', 'name', 'formatted_address'],
+          });
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) {
+              return;
+            }
+            this._userLat = place.geometry.location.lat();
+            this._userLng = place.geometry.location.lng();
+            this.searchQuery = place.formatted_address || place.name;
+            this.searchMapVenues();
+          });
+          this._autocompleteLoaded = true;
+        }
+      }
     } catch (e) {
       console.warn('Google Maps failed to load', e);
     }
@@ -376,6 +381,10 @@ export class HomePageComponent implements OnInit {
 
   goToPlayers() {
     this.router.navigate(['/players']);
+  }
+
+  toggleRequests() {
+    this.showRequestsSidebar = !this.showRequestsSidebar;
   }
 
   goToProfile() {

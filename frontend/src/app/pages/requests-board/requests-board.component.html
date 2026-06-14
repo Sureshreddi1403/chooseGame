@@ -1,0 +1,119 @@
+<div class="sidebar-overlay" (click)="closeSidebar()">
+  <div class="sidebar-content" (click)="$event.stopPropagation()">
+    <!-- ══ TOP NAV ══ -->
+    <header class="rb-nav">
+      <div class="nav-brand">
+        <span class="nav-icon">🔔</span>
+        <span>Requests Board</span>
+      </div>
+      <button class="close-btn" (click)="closeSidebar()">✕</button>
+    </header>
+
+    <div class="rb-content">
+      <div class="rb-header">
+        <h1>Match Challenges</h1>
+      <p>Manage your incoming challenges and see the status of requests you've sent.</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-container">
+      <button class="tab-btn" [class.active]="activeTab() === 'received'" (click)="switchTab('received')">
+        Inbox (Received)
+        <span class="badge" *ngIf="activeTab() === 'received' && receivedChallenges().length > 0">{{ receivedChallenges().length }}</span>
+      </button>
+      <button class="tab-btn" [class.active]="activeTab() === 'sent'" (click)="switchTab('sent')">
+        Outbox (Sent)
+      </button>
+    </div>
+
+    <div class="error-banner" *ngIf="error()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      {{ error() }}
+    </div>
+
+    <div class="loading-state" *ngIf="loading()">
+      <div class="spinner"></div>
+      <p>Loading challenges...</p>
+    </div>
+
+    <!-- RECEIVED TAB -->
+    <div class="tab-content" *ngIf="!loading() && activeTab() === 'received'">
+      <div class="empty-state" *ngIf="receivedChallenges().length === 0">
+        <div class="empty-icon">📭</div>
+        <h3>No Incoming Challenges</h3>
+        <p>When someone challenges you to a match, it will appear here.</p>
+      </div>
+
+      <div class="challenge-list">
+        <div class="challenge-card" *ngFor="let req of receivedChallenges()">
+          <div class="cc-header">
+            <div class="cc-user">
+              <div class="cc-avatar">{{ req.profiles?.username?.slice(0,2) | uppercase }}</div>
+              <div class="cc-user-info">
+                <strong>{{ req.profiles?.username }}</strong>
+                <span class="cc-meta">
+                  ⭐ {{ req.profiles?.rating || 'N/A' }} 
+                  <span *ngIf="req.profiles?.player_location_label"> · {{ req.profiles?.player_location_label }}</span>
+                </span>
+              </div>
+            </div>
+            <span class="status-badge" [ngClass]="req.status">{{ req.status | uppercase }}</span>
+          </div>
+          
+          <div class="cc-body">
+            <div class="sport-tag">
+              {{ getSportIcon(req.sport) }} {{ req.sport | titlecase }} Match
+            </div>
+            <p class="cc-message" *ngIf="req.message">"{{ req.message }}"</p>
+            <span class="cc-date">{{ formatDate(req.created_at) }}</span>
+          </div>
+
+          <div class="cc-actions" *ngIf="req.status === 'pending'">
+            <button class="btn-reject" (click)="updateStatus(req.id, 'rejected')">Decline</button>
+            <button class="btn-accept" (click)="updateStatus(req.id, 'accepted')">Accept Challenge</button>
+          </div>
+          <div class="cc-actions" *ngIf="req.status === 'accepted'">
+            <button class="btn-chat" (click)="openChat(req)">💬 Open Chat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENT TAB -->
+    <div class="tab-content" *ngIf="!loading() && activeTab() === 'sent'">
+      <div class="empty-state" *ngIf="sentChallenges().length === 0">
+        <div class="empty-icon">📫</div>
+        <h3>No Sent Challenges</h3>
+        <p>Head to the "Find Players" dashboard to send a challenge.</p>
+      </div>
+
+      <div class="challenge-list">
+        <div class="challenge-card sent" *ngFor="let req of sentChallenges()">
+          <div class="cc-header">
+            <div class="cc-user">
+              <div class="cc-avatar sent-avatar">{{ req.profiles?.username?.slice(0,2) | uppercase }}</div>
+              <div class="cc-user-info">
+                <span class="to-label">To:</span>
+                <strong>{{ req.profiles?.username }}</strong>
+              </div>
+            </div>
+            <span class="status-badge" [ngClass]="req.status">{{ req.status | uppercase }}</span>
+          </div>
+          
+          <div class="cc-body">
+            <div class="sport-tag">
+              {{ getSportIcon(req.sport) }} {{ req.sport | titlecase }} Match
+            </div>
+            <p class="cc-message" *ngIf="req.message">"{{ req.message }}"</p>
+            <span class="cc-date">{{ formatDate(req.created_at) }}</span>
+          </div>
+
+          <div class="cc-actions" *ngIf="req.status === 'accepted'">
+            <button class="btn-chat" (click)="openChat(req)">💬 Open Chat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

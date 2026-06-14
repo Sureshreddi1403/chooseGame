@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PlayerService, Player } from '../../core/services/player.service';
+import { AuthService } from '../../core/services/auth.service';
+import { ChallengeService } from '../../core/services/challenge.service';
 import { environment } from '../../../environments/environment';
+import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
 interface SportFilter {
   label: string;
@@ -19,12 +22,14 @@ interface DistanceFilter {
 @Component({
   selector: 'app-players-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RequestsBoardComponent],
   templateUrl: './players-dashboard.component.html',
   styleUrl: './players-dashboard.component.scss',
 })
 export class PlayersDashboardComponent implements OnInit, OnDestroy {
   private playerService = inject(PlayerService);
+  private authService = inject(AuthService);
+  private challengeService = inject(ChallengeService);
   private router = inject(Router);
 
   /* ── State ── */
@@ -37,18 +42,33 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
   selectedPlayer = signal<Player | null>(null);
   searchQuery = '';
 
+  /* ── Challenge Modal ── */
+  showChallengeModal = signal(false);
+  challengeLoading = signal(false);
+  challengeMessage = signal('');
+  challengeSport = signal('');
+  challengeError = signal('');
+  challengeSuccess = signal(false);
+
+  // Requests Sidebar
+  showRequestsSidebar = false;
+
   private _userLat?: number;
   private _userLng?: number;
   private _map: any = null;
   private _markers: any[] = [];
+  private _activeInfoWindow: any = null;
 
   sports: SportFilter[] = [
     { label: 'All Sports', value: 'all',        icon: '🏆' },
-    { label: 'Basketball', value: 'basketball',  icon: '🏀' },
-    { label: 'Tennis',     value: 'tennis',      icon: '🎾' },
-    { label: 'Pickleball', value: 'pickleball',  icon: '🏓' },
-    { label: 'Soccer',     value: 'soccer',      icon: '⚽' },
-    { label: 'Volleyball', value: 'volleyball',  icon: '🏐' },
+    { label: 'Basketball', value: 'basketball', icon: '🏀' },
+    { label: 'Tennis',     value: 'tennis',     icon: '🎾' },
+    { label: 'Pickleball', value: 'pickleball', icon: '🏓' },
+    { label: 'Soccer',     value: 'soccer',     icon: '⚽' },
+    { label: 'Volleyball', value: 'volleyball', icon: '🏐' },
+    { label: 'Baseball',   value: 'baseball',   icon: '⚾' },
+    { label: 'Swimming',   value: 'swimming',   icon: '🏊' },
+    { label: 'Golf',       value: 'golf',       icon: '⛳' },
   ];
 
   distanceFilters: DistanceFilter[] = [
@@ -84,6 +104,13 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
+    (window as any).challengePlayer = (id: string) => {
+      const p = this.players().find(pl => pl.id === id);
+      if (p) {
+        this.openChallengeModal(p);
+      }
+    };
+
     await this.detectLocation();
     this.loadPlayers();
   }
@@ -115,16 +142,25 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
   /* ── Players ── */
   loadPlayers() {
     this.loading.set(true);
+    const userId = this.authService.currentUserId;
+
     this.playerService.getPlayers(this.selectedSport(), this._userLat, this._userLng).subscribe({
       next: (res) => {
-        const withDist = res.data.map(p => ({
+        let withDist = res.data.map(p => ({
           ...p,
           distanceKm: p.distanceKm ?? (
             this._userLat != null && this._userLng != null
               ? this.distanceKm(this._userLat, this._userLng, p.player_lat, p.player_lng)
               : undefined
           ),
-        })).sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
+        }));
+
+        if (userId) {
+          withDist = withDist.filter(p => p.id !== userId);
+        }
+
+        withDist.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
+        
         this.players.set(withDist);
         this.loading.set(false);
         this.renderMap();
@@ -146,6 +182,20 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
   selectPlayer(player: Player) {
     this.selectedPlayer.set(player);
     this.panMapTo(player.player_lat, player.player_lng);
+  }
+
+  unselectPlayer() {
+    this.selectedPlayer.set(null);
+    if (this._activeInfoWindow) {
+      this._activeInfoWindow.close();
+      this._activeInfoWindow = null;
+    }
+    if (this._map) {
+      setTimeout(() => {
+        this._map.panTo({ lat: this._userLat ?? 17.4400, lng: this._userLng ?? 78.4900 });
+        this._map.setZoom(13); // Zoom out back to default
+      }, 50); // wait for container to resize
+    }
   }
 
   /* ── Map ── */
@@ -196,14 +246,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
 
       // Player pins
       this.players().forEach(p => {
-        const sportColors: Record<string, string> = {
-          basketball: '#f97316',
-          tennis:     '#22c55e',
-          pickleball: '#a855f7',
-          soccer:     '#06b6d4',
-          volleyball: '#eab308',
-        };
-        const color = sportColors[this.primarySport(p)] || '#64748b';
+        const color = this.sportAccent(this.primarySport(p));
 
         const marker = new (window as any).google.maps.Marker({
           position: { lat: p.player_lat, lng: p.player_lng },
@@ -230,8 +273,12 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
         });
 
         marker.addListener('click', () => {
+          if (this._activeInfoWindow) {
+            this._activeInfoWindow.close();
+          }
           this.selectPlayer(p);
           infoWindow.open(this._map, marker);
+          this._activeInfoWindow = infoWindow;
         });
 
         this._markers.push(marker);
@@ -291,6 +338,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
     const icons: Record<string, string> = {
       basketball: '🏀', tennis: '🎾', pickleball: '🏓',
       soccer: '⚽', volleyball: '🏐',
+      baseball: '⚾', swimming: '🏊', golf: '⛳',
     };
     return icons[sport] || '🏆';
   }
@@ -302,6 +350,9 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
       pickleball: '#faf5ff',
       soccer:     '#ecfeff',
       volleyball: '#fefce8',
+      baseball:   '#fef2f2',
+      swimming:   '#eff6ff',
+      golf:       '#ecfdf5',
     };
     return colors[sport] || '#f8fafc';
   }
@@ -313,8 +364,11 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
       pickleball: '#a855f7',
       soccer:     '#06b6d4',
       volleyball: '#eab308',
+      baseball:   '#ef4444',
+      swimming:   '#3b82f6',
+      golf:       '#10b981',
     };
-    return colors[sport] || '#1d4ed8';
+    return colors[sport] || '#64748b';
   }
 
   goBack() {
@@ -333,5 +387,59 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
       { featureType: 'poi',        stylers: [{ visibility: 'off' }] },
       { featureType: 'transit',    stylers: [{ visibility: 'off' }] },
     ];
+  }
+
+  toggleRequests() {
+    this.showRequestsSidebar = !this.showRequestsSidebar;
+  }
+
+  /* ── Challenge Logic ── */
+  openChallengeModal(player: Player, event?: Event) {
+    if (event) event.stopPropagation();
+    this.selectedPlayer.set(player);
+    this.challengeSport.set(this.primarySport(player) || 'all');
+    this.challengeMessage.set('');
+    this.challengeError.set('');
+    this.challengeSuccess.set(false);
+    this.showChallengeModal.set(true);
+  }
+
+  closeChallengeModal() {
+    this.showChallengeModal.set(false);
+  }
+
+  submitChallenge() {
+    const sender_id = this.authService.currentUserId;
+    const receiver_id = this.selectedPlayer()?.id;
+    const sport = this.challengeSport();
+    
+    if (!sender_id || !receiver_id) {
+      this.challengeError.set('You must be logged in to send a challenge.');
+      return;
+    }
+    if (!sport || sport === 'all') {
+      this.challengeError.set('Please select a specific sport.');
+      return;
+    }
+
+    this.challengeLoading.set(true);
+    this.challengeError.set('');
+
+    this.challengeService.createChallenge({
+      sender_id,
+      receiver_id,
+      sport,
+      message: this.challengeMessage()
+    }).subscribe({
+      next: () => {
+        this.challengeLoading.set(false);
+        this.challengeSuccess.set(true);
+        setTimeout(() => this.closeChallengeModal(), 2000);
+      },
+      error: (err) => {
+        this.challengeLoading.set(false);
+        this.challengeError.set(err.error?.message || 'Failed to send challenge.');
+      }
+    });
   }
 }

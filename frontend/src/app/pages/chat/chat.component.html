@@ -1,0 +1,59 @@
+<div class="chat-shell">
+  <header class="chat-nav">
+    <button class="back-btn" (click)="goBack()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      Back
+    </button>
+    <div class="nav-brand">
+      <span class="nav-icon">💬</span>
+      <span>Match Chat</span>
+    </div>
+    <div class="nav-right"></div>
+  </header>
+
+  <div class="chat-container">
+    <div class="chat-main">
+      <div class="error-banner" *ngIf="error()">
+        {{ error() }}
+      </div>
+
+      <div class="messages-area" #messagesContainer>
+        <div class="loading-state" *ngIf="loading()">
+          <div class="spinner"></div>
+          <p>Loading messages...</p>
+        </div>
+
+        <div class="empty-state" *ngIf="!loading() && messages().length === 0 && !error()">
+          <div class="empty-icon">👋</div>
+          <h3>Start the conversation!</h3>
+          <p>Send a message to coordinate your match.</p>
+        </div>
+
+        <div class="message" 
+             *ngFor="let msg of messages()" 
+             [class.mine]="msg.sender_id === currentUserId">
+          <div class="msg-bubble">
+            {{ msg.content }}
+          </div>
+          <div class="msg-meta">
+            {{ formatTime(msg.created_at) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area" *ngIf="!error()">
+        <input 
+          type="text" 
+          placeholder="Type your message..." 
+          [ngModel]="newMessage()"
+          (ngModelChange)="newMessage.set($event)"
+          (keyup.enter)="sendMessage()"
+          [disabled]="sending()"
+        />
+        <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage().trim() || sending()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

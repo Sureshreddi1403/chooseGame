@@ -7,6 +7,7 @@
 
       <div class="search-bar">
         <input
+          id="home-search-input"
           type="text"
           placeholder="Search courts, venues or city"
           (input)="searchQuery = $any($event.target).value"
@@ -15,11 +16,7 @@
       </div>
 
       <div class="hero-actions">
-        <button type="button" class="primary" (click)="loadNearbyCourts()">Use my location</button>
-        <button type="button" class="secondary" (click)="searchMapVenues()">Search map venues</button>
-        <button type="button" class="secondary" (click)="resetSearch()">Show all</button>
-        <button type="button" class="primary" (click)="goToPlayers()" style="background:#7c3aed">👥 Find Players</button>
-        <button type="button" class="primary" (click)="goToProfile()" style="background:#0f766e">⚙️ My Profile</button>
+        <button type="button" class="secondary" (click)="searchMapVenues()">Show nearby</button>
       </div>
 
       <div class="hero-meta">
@@ -211,3 +208,10 @@
     </ng-template>
   </section>
 </section>
+
+<!-- Floating Notifications Bell -->
+<button class="floating-bell" (click)="toggleRequests()">
+  🔔
+</button>
+
+<app-requests-board *ngIf="showRequestsSidebar" (close)="toggleRequests()"></app-requests-board>
