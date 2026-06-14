@@ -36,7 +36,10 @@ router.post("/", async (req: Request, res: Response) => {
 
   if (error) {
     console.error("Failed to create play request:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    const message = error.message?.includes("play_requests")
+      ? "Play request table is missing or database schema is not initialized. Please run your migrations."
+      : error.message;
+    return res.status(500).json({ success: false, message });
   }
 
   return res.status(201).json({ success: true, data });

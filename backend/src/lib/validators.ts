@@ -1,7 +1,6 @@
 const EMAIL_REGEX = /[^@]+@[^@]+\.[^@]+/;
 const NAME_REGEX = /^[A-Za-z]{1,60}$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9._]{3,30}$/;
-const PHONE_REGEX = /^\+?[0-9]{7,15}$/;
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{10,}$/;
 
@@ -12,12 +11,9 @@ export interface SignInBody {
 
 export interface RegisterBody {
   username_Register: string;
-  phoneNumber_Register: string;
   handedness_Register: 'left' | 'right';
   gender_Register: string;
   email_Register: string;
-  emailVerified_Register: boolean;
-  phoneVerified_Register: boolean;
   password_Register: string;
   confirmPassword_Register: string;
   rating_Register?: number;
@@ -41,18 +37,8 @@ export function validateRegister(body: RegisterBody): string | null {
   if (!USERNAME_REGEX.test(body.username_Register))
     return "Username must be 3–30 characters, letters, numbers, dots, or underscores.";
 
-  if (!body.phoneNumber_Register?.trim()) return "Phone number is required.";
-  if (!PHONE_REGEX.test(body.phoneNumber_Register))
-    return "Phone number must contain only digits and may include a leading +.";
-
   if (!body.email_Register?.trim()) return "Email is required.";
   if (!EMAIL_REGEX.test(body.email_Register)) return "Invalid email format.";
-
-  if (!body.emailVerified_Register)
-    return "Please verify your email before continuing.";
-
-  if (!body.phoneVerified_Register)
-    return "Please verify your phone number before continuing.";
 
   if (!body.handedness_Register) return "Handedness is required.";
   if (!['left', 'right'].includes(body.handedness_Register))

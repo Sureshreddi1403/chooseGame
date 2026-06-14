@@ -10,12 +10,9 @@ export interface SignInRequest {
 
 export interface RegisterRequest {
   username_Register: string;
-  phoneNumber_Register: string;
   handedness_Register: 'left' | 'right';
   gender_Register: string;
   email_Register: string;
-  emailVerified_Register: boolean;
-  phoneVerified_Register: boolean;
   password_Register: string;
   confirmPassword_Register: string;
   rating_Register?: number;

@@ -67,29 +67,6 @@
       </div>
 
       <div class="field">
-        <label for="phoneNumber_Register">Phone Number</label>
-        <input
-          id="phoneNumber_Register"
-          type="tel"
-          formControlName="phoneNumber_Register"
-          placeholder="+91 98765 43210"
-          autocomplete="tel"
-        />
-        <div class="verification-row">
-          <button type="button" class="verify-button" (click)="sendPhoneVerificationCode()">Send code</button>
-          <span class="status" [class.verified]="registerForm.get('phoneVerified_Register')?.value">{{ registerForm.get('phoneVerified_Register')?.value ? 'Phone verified' : 'Phone unverified' }}</span>
-        </div>
-        <div class="inline-row">
-          <input
-            type="text"
-            formControlName="phoneVerificationCode_Register"
-            placeholder="Enter code"
-          />
-          <button type="button" class="verify-button" (click)="confirmPhoneVerification()">Verify</button>
-        </div>
-      </div>
-
-      <div class="field">
         <label for="email_Register">Email ID</label>
         <input
           id="email_Register"
@@ -98,18 +75,6 @@
           placeholder="you@example.com"
           autocomplete="email"
         />
-        <div class="verification-row">
-          <button type="button" class="verify-button" (click)="sendEmailVerificationCode()">Send code</button>
-          <span class="status" [class.verified]="registerForm.get('emailVerified_Register')?.value">{{ registerForm.get('emailVerified_Register')?.value ? 'Email verified' : 'Email unverified' }}</span>
-        </div>
-        <div class="inline-row">
-          <input
-            type="text"
-            formControlName="emailVerificationCode_Register"
-            placeholder="Enter code"
-          />
-          <button type="button" class="verify-button" (click)="confirmEmailVerification()">Verify</button>
-        </div>
         <span class="field-error" *ngIf="fieldError('register', 'email_Register')">{{ fieldError('register', 'email_Register') }}</span>
       </div>
 

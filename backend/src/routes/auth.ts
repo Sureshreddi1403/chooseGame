@@ -127,16 +127,12 @@ router.post("/register", async (req: Request, res: Response) => {
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password: body.password_Register,
-    phone: body.phoneNumber_Register,
     user_metadata: {
       username,
       handedness: body.handedness_Register,
       gender: body.gender_Register,
       rating: body.rating_Register ?? 3,
-      email_verified: body.emailVerified_Register,
-      phone_verified: body.phoneVerified_Register,
     },
-    email_confirm: body.emailVerified_Register,
   });
 
   if (error) {
@@ -154,12 +150,9 @@ router.post("/register", async (req: Request, res: Response) => {
       last_name: '',
       email,
       username,
-      phone_number: body.phoneNumber_Register,
       handedness: body.handedness_Register,
       gender: body.gender_Register,
       rating: body.rating_Register ?? 3,
-      email_verified: body.emailVerified_Register,
-      phone_verified: body.phoneVerified_Register,
       is_active: true,
     });
 

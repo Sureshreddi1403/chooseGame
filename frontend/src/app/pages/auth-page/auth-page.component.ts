@@ -43,12 +43,7 @@ export class AuthPageComponent {
   registerForm = this.fb.group(
     {
       username_Register: ['', [Validators.required]],
-      phoneNumber_Register: ['', [Validators.required]],
-      phoneVerificationCode_Register: [''],
-      phoneVerified_Register: [false],
       email_Register: ['', [Validators.required, emailValidator()]],
-      emailVerificationCode_Register: [''],
-      emailVerified_Register: [false],
       gender_Register: ['', [Validators.required]],
       handedness_Register: ['', [Validators.required]],
       password_Register: ['', [Validators.required, passwordPolicyValidator()]],
@@ -112,44 +107,6 @@ export class AuthPageComponent {
       });
   }
 
-  sendEmailVerificationCode(): void {
-    const email = this.registerForm.get('email_Register')?.value?.trim();
-    if (!email || !this.registerForm.get('email_Register')?.valid) {
-      this.registerError.set('Enter a valid email before requesting verification.');
-      return;
-    }
-    this.verificationMessage.set('Verification code sent to your email. Use code 1234 to verify.');
-  }
-
-  confirmEmailVerification(): void {
-    const code = this.registerForm.get('emailVerificationCode_Register')?.value?.trim();
-    if (code === '1234') {
-      this.registerForm.get('emailVerified_Register')?.setValue(true);
-      this.verificationMessage.set('Email verified successfully.');
-      return;
-    }
-    this.registerError.set('Incorrect email verification code. Use 1234 to verify.');
-  }
-
-  sendPhoneVerificationCode(): void {
-    const phone = this.registerForm.get('phoneNumber_Register')?.value?.trim();
-    if (!phone) {
-      this.registerError.set('Enter a phone number before requesting verification.');
-      return;
-    }
-    this.verificationMessage.set('Verification code sent to your phone. Use code 1234 to verify.');
-  }
-
-  confirmPhoneVerification(): void {
-    const code = this.registerForm.get('phoneVerificationCode_Register')?.value?.trim();
-    if (code === '1234') {
-      this.registerForm.get('phoneVerified_Register')?.setValue(true);
-      this.verificationMessage.set('Phone number verified successfully.');
-      return;
-    }
-    this.registerError.set('Incorrect phone verification code. Use 1234 to verify.');
-  }
-
   onCreateAccount_Submit(): void {
     this.registerError.set('');
     this.verificationMessage.set('');
@@ -181,12 +138,9 @@ export class AuthPageComponent {
             this.authService
               .register({
                 username_Register: form.username_Register!,
-                phoneNumber_Register: form.phoneNumber_Register!,
                 handedness_Register: form.handedness_Register! as 'left' | 'right',
                 gender_Register: form.gender_Register!,
                 email_Register: form.email_Register!,
-                emailVerified_Register: form.emailVerified_Register ?? false,
-                phoneVerified_Register: form.phoneVerified_Register ?? false,
                 password_Register: form.password_Register!,
                 confirmPassword_Register: form.confirmPassword_Register!,
               })

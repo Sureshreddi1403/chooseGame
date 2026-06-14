@@ -46,6 +46,7 @@ export class HomePageComponent implements OnInit {
   loading = false;
   locationError = '';
   locationLoading = false;
+  showingNearby = false;
   searchQuery = '';
   environmentKey = !!environment.googleMapsApiKey;
 
@@ -102,14 +103,13 @@ export class HomePageComponent implements OnInit {
       this._userLat = latitude;
       this._userLng = longitude;
 
-      this.nearby = this.venues
-        .map((venue) => {
-          if (!venue.latitude || !venue.longitude) return null;
-          const distance = this.distanceKm(latitude, longitude, +venue.latitude, +venue.longitude);
-          return { ...venue, distance } as Venue & { distance: number };
-        })
-        .filter((venue): venue is Venue & { distance: number } => !!venue && venue.distance <= 10)
-        .sort((a, b) => a.distance - b.distance);
+      this.nearby = await this.venueService.list({
+        lat: latitude,
+        lng: longitude,
+        radiusKm: 10,
+      });
+      this.showingNearby = true;
+      this.filteredVenues = [...this.nearby];
 
       this.applySearch();
       await this.initMap();
@@ -121,14 +121,75 @@ export class HomePageComponent implements OnInit {
     }
   }
 
-  applySearch() {
-    const query = this.searchQuery.trim().toLowerCase();
-    if (!query) {
-      this.filteredVenues = [...this.venues];
+  async searchMapVenues() {
+    if (this._userLat == null || this._userLng == null) {
+      this.locationError = 'Please allow location access first by clicking Use my location.';
       return;
     }
 
-    this.filteredVenues = this.venues.filter((venue) => {
+    this.locationLoading = true;
+    this.locationError = '';
+
+    try {
+      const google = (window as any).google;
+      if (!google || !google.maps || !google.maps.places) {
+        await this.loadGoogleMaps(environment.googleMapsApiKey);
+      }
+
+      await this.initMap();
+
+      const service = new (window as any).google.maps.places.PlacesService(this._map);
+      const request = {
+        location: { lat: this._userLat, lng: this._userLng },
+        radius: 10000,
+        keyword: 'sports complex',
+      };
+
+      const results: any[] = await new Promise((resolve, reject) => {
+        service.nearbySearch(request, (places: any, status: any) => {
+          if (status === 'OK') {
+            resolve(places);
+          } else {
+            reject(status);
+          }
+        });
+      });
+
+      this.nearby = results.map((place) => ({
+        id: place.place_id,
+        name: place.name,
+        address_line1: place.vicinity || place.formatted_address || '',
+        city: '',
+        state: '',
+        latitude: place.geometry?.location?.lat?.(),
+        longitude: place.geometry?.location?.lng?.(),
+        distance: this.distanceKm(this._userLat, this._userLng, place.geometry?.location?.lat?.(), place.geometry?.location?.lng?.()),
+        games_available: ['Basketball', 'Tennis', 'Soccer', 'Volleyball'],
+      }));
+
+      this.showingNearby = true;
+      this.filteredVenues = [...this.nearby];
+      await this.initMap();
+    } catch (error: any) {
+      this.locationError =
+        typeof error === 'string'
+          ? `Map search failed: ${error}`
+          : 'Unable to search map venues. Please try again.';
+    } finally {
+      this.locationLoading = false;
+    }
+  }
+
+  applySearch() {
+    const query = this.searchQuery.trim().toLowerCase();
+    const source = this.showingNearby ? this.nearby : this.venues;
+
+    if (!query) {
+      this.filteredVenues = [...source];
+      return;
+    }
+
+    this.filteredVenues = source.filter((venue) => {
       return (
         venue.name?.toLowerCase().includes(query) ||
         venue.city?.toLowerCase().includes(query) ||
@@ -139,6 +200,7 @@ export class HomePageComponent implements OnInit {
 
   resetSearch() {
     this.searchQuery = '';
+    this.showingNearby = false;
     this.filteredVenues = [...this.venues];
     this.selectedVenue = null;
     this.bookingMessage = '';
@@ -233,7 +295,8 @@ export class HomePageComponent implements OnInit {
         });
       }
 
-      this.venues.forEach((v) => {
+      const markerSources = this.showingNearby ? this.nearby : this.venues;
+      markerSources.forEach((v) => {
         if (!v.latitude || !v.longitude) return;
         new (window as any).google.maps.Marker({
           position: { lat: +v.latitude, lng: +v.longitude },
@@ -250,7 +313,7 @@ export class HomePageComponent implements OnInit {
     return new Promise((resolve, reject) => {
       if ((window as any).google && (window as any).google.maps) return resolve();
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
       script.defer = true;
       script.async = true;
       script.onload = () => resolve();

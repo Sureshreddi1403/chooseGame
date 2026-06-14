@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
@@ -15,14 +15,27 @@ export interface Venue {
   description?: string;
 }
 
+export interface VenueListOptions {
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class VenueService {
   private http = inject(HttpClient);
   private api = environment.apiUrl;
 
-  async list(): Promise<Venue[]> {
+  async list(options?: VenueListOptions): Promise<Venue[]> {
+    const params: Record<string, string> = {};
+    if (options?.lat != null) params.lat = String(options.lat);
+    if (options?.lng != null) params.lng = String(options.lng);
+    if (options?.radiusKm != null) params.radiusKm = String(options.radiusKm);
+
+    const httpParams = new HttpParams({ fromObject: params });
+
     return this.http
-      .get<{ success: boolean; data: Venue[] }>(`${this.api}/venues`)
+      .get<{ success: boolean; data: Venue[] }>(`${this.api}/venues`, { params: httpParams })
       .toPromise()
       .then((r: any) => r?.data ?? []);
   }
