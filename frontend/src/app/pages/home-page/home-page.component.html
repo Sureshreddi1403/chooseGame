@@ -1,0 +1,210 @@
+<section class="dashboard">
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Playo-style court discovery</p>
+      <h1>Find courts and book games within 10 km.</h1>
+      <p class="hero-text">Use your current location to discover nearby venues, post game requests, and coordinate matches with players.</p>
+
+      <div class="search-bar">
+        <input
+          type="text"
+          placeholder="Search courts, venues or city"
+          (input)="searchQuery = $any($event.target).value"
+        />
+        <button type="button" (click)="applySearch()">Search</button>
+      </div>
+
+      <div class="hero-actions">
+        <button type="button" class="primary" (click)="loadNearbyCourts()">Use my location</button>
+        <button type="button" class="secondary" (click)="resetSearch()">Show all</button>
+      </div>
+
+      <div class="hero-meta">
+        <span *ngIf="locationLoading">Locating nearby courts…</span>
+        <span *ngIf="!locationLoading && nearby.length">Showing {{ nearby.length }} courts within 10 km</span>
+        <span *ngIf="!locationLoading && !nearby.length">No courts found nearby yet.</span>
+      </div>
+
+      <div *ngIf="locationError" class="location-error">
+        {{ locationError }}
+      </div>
+    </div>
+
+    <div class="hero-map" id="map">
+      <div class="map-placeholder" *ngIf="!environmentKey">Add your Google Maps API key in environment.ts to render the map.</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <article class="stat-card">
+      <span class="stat-label">Nearby courts</span>
+      <strong>{{ nearby.length }}</strong>
+      <p>Automatic 10 km radius discovery.</p>
+    </article>
+    <article class="stat-card">
+      <span class="stat-label">Total venues</span>
+      <strong>{{ venues.length }}</strong>
+      <p>Available venues loaded from the backend.</p>
+    </article>
+    <article class="stat-card">
+      <span class="stat-label">Active match chat</span>
+      <strong>{{ chatThreads.length }}</strong>
+      <p>Chat rooms for accepted match requests.</p>
+    </article>
+  </div>
+
+  <section class="play-request-section">
+    <div class="section-header">
+      <div>
+        <h2>Request a game</h2>
+        <p>Notify nearby players within 10 km by default. You can adjust the radius before posting.</p>
+      </div>
+    </div>
+
+    <div class="play-request-grid">
+      <div class="field">
+        <label for="sport_name">Sport</label>
+        <select id="sport_name" [(ngModel)]="playRequest.sport_name">
+          <option *ngFor="let sport of availableSports" [value]="sport.value">{{ sport.label }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="requested_date">Date</label>
+        <input id="requested_date" type="date" [(ngModel)]="playRequest.requested_date" />
+      </div>
+
+      <div class="field">
+        <label for="requested_time">Time</label>
+        <input id="requested_time" type="time" [(ngModel)]="playRequest.requested_time" />
+      </div>
+
+      <div class="field">
+        <label for="radius_km">Radius (km)</label>
+        <input id="radius_km" type="number" min="1" max="20" [(ngModel)]="playRequest.radius_km" />
+      </div>
+    </div>
+
+    <div class="play-request-actions">
+      <button type="button" class="btn-primary" (click)="submitPlayRequest()" [disabled]="isSubmittingRequest">
+        {{ isSubmittingRequest ? 'Submitting...' : 'Notify players' }}
+      </button>
+      <span class="hint">Default radius is 10 km and uses your current location.</span>
+    </div>
+
+    <div *ngIf="playRequestMessage" class="success-banner">{{ playRequestMessage }}</div>
+    <div *ngIf="playRequestError" class="error-banner">{{ playRequestError }}</div>
+  </section>
+
+  <div class="venue-section">
+    <div class="section-header">
+      <div>
+        <h2>Courts near you</h2>
+        <p>Select a venue to see games and book.</p>
+      </div>
+      <span class="badge">Nearby 10 km</span>
+    </div>
+
+    <div class="venue-grid">
+      <article
+        *ngFor="let venue of filteredVenues"
+        class="venue-card"
+        [class.selected]="selectedVenue?.id === venue.id"
+        (click)="selectVenue(venue)"
+      >
+        <div class="venue-image"></div>
+        <div class="venue-details">
+          <div>
+            <h3>{{ venue.name }}</h3>
+            <p>{{ venue.city }}, {{ venue.state }}</p>
+          </div>
+          <div class="venue-meta">
+            <span *ngIf="venue.distance !== undefined">{{ venue.distance | number:'1.0-1' }} km</span>
+          </div>
+        </div>
+        <p class="venue-address">{{ venue.address_line1 }}</p>
+      </article>
+    </div>
+
+    <div *ngIf="!loading && filteredVenues.length === 0" class="empty-state">
+      <p>No courts found for this search. Try another keyword or allow location access to see nearby courts.</p>
+    </div>
+  </div>
+
+  <section class="booking-panel" *ngIf="selectedVenue">
+    <div class="section-header">
+      <div>
+        <h2>Book at {{ selectedVenue.name }}</h2>
+        <p>Select the sport and confirm your booking.</p>
+      </div>
+    </div>
+
+    <div class="booking-grid">
+      <div class="field">
+        <label for="selectedSport">Sport</label>
+        <select id="selectedSport" [(ngModel)]="selectedGame">
+          <option *ngFor="let game of selectedVenue.games_available" [value]="game.toLowerCase()">{{ game }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Venue</label>
+        <p class="venue-summary">{{ selectedVenue.city }}, {{ selectedVenue.state }}</p>
+      </div>
+    </div>
+
+    <button type="button" class="btn-primary" (click)="bookVenue()">Book this game</button>
+    <p *ngIf="bookingMessage" class="success-banner">{{ bookingMessage }}</p>
+    <p *ngIf="bookingError" class="error-banner">{{ bookingError }}</p>
+  </section>
+
+  <section class="chat-section">
+    <div class="section-header">
+      <div>
+        <h2>Match chat</h2>
+        <p>Accepted requests open a chat space for players.</p>
+      </div>
+    </div>
+
+    <div *ngIf="chatThreads.length; else noChats" class="chat-layout">
+      <aside class="chat-list">
+        <button
+          type="button"
+          *ngFor="let thread of chatThreads"
+          class="chat-thread"
+          [class.active]="selectedChat?.id === thread.id"
+          (click)="openChat(thread)"
+        >
+          <span>{{ thread.title }}</span>
+          <small class="thread-status" [class.pending]="thread.status === 'pending'" [class.matched]="thread.status === 'matched'">
+            {{ thread.status }}
+          </small>
+        </button>
+      </aside>
+
+      <div class="chat-window" *ngIf="selectedChat">
+        <div class="messages">
+          <div *ngFor="let message of selectedChat.messages" class="message">
+            <strong>{{ message.author }}:</strong>
+            <span>{{ message.text }}</span>
+            <small>{{ message.time }}</small>
+          </div>
+        </div>
+
+        <div class="chat-actions">
+          <input type="text" [(ngModel)]="newChatMessage" placeholder="Send a message" />
+          <button type="button" class="btn-primary" (click)="sendChatMessage()" [disabled]="!newChatMessage.trim()">Send</button>
+        </div>
+
+        <button type="button" *ngIf="selectedChat.status === 'pending'" class="secondary" (click)="acceptMatch(selectedChat)">
+          Accept match
+        </button>
+      </div>
+    </div>
+
+    <ng-template #noChats>
+      <div class="empty-state">
+        <p>No active chats yet. Submit a game request or book a venue to start matchmaking.</p>
+      </div>
+    </ng-template>
+  </section>
+</section>

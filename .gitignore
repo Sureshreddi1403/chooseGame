@@ -1,0 +1,65 @@
+# Node modules
+**/node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+/.pnp/
+.pnp.js
+
+# Build outputs
+/dist/
+/build/
+/.next/
+/.nuxt/
+/out/
+
+# Production
+/build/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Angular
+/.angular/
+/.angular-cache/
+
+# TypeScript
+/*.tsbuildinfo
+
+# Mac files
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Supabase local files
+supabase/.tmp
+supabase/.cache
+
+# Misc
+coverage/
+report/

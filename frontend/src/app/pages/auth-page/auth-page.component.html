@@ -1,0 +1,173 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo">
+        <span class="logo-icon">P</span>
+        <span class="logo-text">Play<span class="accent">Games</span></span>
+      </div>
+      <p class="subtitle">Book courts, match players, and start games fast.</p>
+    </div>
+
+    <div class="tab-bar">
+      <button type="button" class="tab" [class.active]="activeTab() === 'signin'" (click)="setTab('signin')">
+        Login
+      </button>
+      <button type="button" class="tab" [class.active]="activeTab() === 'register'" (click)="setTab('register')">
+        Register
+      </button>
+    </div>
+
+    <form *ngIf="activeTab() === 'signin'" [formGroup]="signInForm" (ngSubmit)="onLetsPlay_Submit()" class="auth-form">
+      <div class="field">
+        <label for="username_SignIn">Username or Email</label>
+        <input
+          id="username_SignIn"
+          type="text"
+          formControlName="username_SignIn"
+          placeholder="Enter your username or email"
+          autocomplete="username"
+        />
+        <span class="field-error" *ngIf="fieldError('signin', 'username_SignIn')">{{ fieldError('signin', 'username_SignIn') }}</span>
+      </div>
+
+      <div class="field">
+        <label for="password_SignIn">Password</label>
+        <input
+          id="password_SignIn"
+          type="password"
+          formControlName="password_SignIn"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+        />
+        <span class="field-error" *ngIf="fieldError('signin', 'password_SignIn')">{{ fieldError('signin', 'password_SignIn') }}</span>
+      </div>
+
+      <button type="button" class="forgot-link" (click)="onForgotPassword()">Forgot Password?</button>
+
+      <div *ngIf="showError_SignIn_Message()" class="error-banner" role="alert">
+        {{ error_SignIn_Message() }}
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Signing in...' : 'Login' }}
+      </button>
+    </form>
+
+    <form *ngIf="activeTab() === 'register'" [formGroup]="registerForm" (ngSubmit)="onCreateAccount_Submit()" class="auth-form">
+      <div class="field">
+        <label for="username_Register">Username</label>
+        <input
+          id="username_Register"
+          type="text"
+          formControlName="username_Register"
+          placeholder="Choose a username"
+          autocomplete="username"
+        />
+        <span class="field-error" *ngIf="fieldError('register', 'username_Register')">{{ fieldError('register', 'username_Register') }}</span>
+      </div>
+
+      <div class="field">
+        <label for="phoneNumber_Register">Phone Number</label>
+        <input
+          id="phoneNumber_Register"
+          type="tel"
+          formControlName="phoneNumber_Register"
+          placeholder="+91 98765 43210"
+          autocomplete="tel"
+        />
+        <div class="verification-row">
+          <button type="button" class="verify-button" (click)="sendPhoneVerificationCode()">Send code</button>
+          <span class="status" [class.verified]="registerForm.get('phoneVerified_Register')?.value">{{ registerForm.get('phoneVerified_Register')?.value ? 'Phone verified' : 'Phone unverified' }}</span>
+        </div>
+        <div class="inline-row">
+          <input
+            type="text"
+            formControlName="phoneVerificationCode_Register"
+            placeholder="Enter code"
+          />
+          <button type="button" class="verify-button" (click)="confirmPhoneVerification()">Verify</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email_Register">Email ID</label>
+        <input
+          id="email_Register"
+          type="email"
+          formControlName="email_Register"
+          placeholder="you@example.com"
+          autocomplete="email"
+        />
+        <div class="verification-row">
+          <button type="button" class="verify-button" (click)="sendEmailVerificationCode()">Send code</button>
+          <span class="status" [class.verified]="registerForm.get('emailVerified_Register')?.value">{{ registerForm.get('emailVerified_Register')?.value ? 'Email verified' : 'Email unverified' }}</span>
+        </div>
+        <div class="inline-row">
+          <input
+            type="text"
+            formControlName="emailVerificationCode_Register"
+            placeholder="Enter code"
+          />
+          <button type="button" class="verify-button" (click)="confirmEmailVerification()">Verify</button>
+        </div>
+        <span class="field-error" *ngIf="fieldError('register', 'email_Register')">{{ fieldError('register', 'email_Register') }}</span>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="gender_Register">Gender</label>
+          <select id="gender_Register" formControlName="gender_Register">
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="prefer_not_to_say">Prefer not to say</option>
+          </select>
+          <span class="field-error" *ngIf="fieldError('register', 'gender_Register')">{{ fieldError('register', 'gender_Register') }}</span>
+        </div>
+
+        <div class="field">
+          <label for="handedness_Register">Handedness</label>
+          <select id="handedness_Register" formControlName="handedness_Register">
+            <option value="">Select hand</option>
+            <option value="right">Right hand</option>
+            <option value="left">Left hand</option>
+          </select>
+          <span class="field-error" *ngIf="fieldError('register', 'handedness_Register')">{{ fieldError('register', 'handedness_Register') }}</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password_Register">Choose Password</label>
+        <input
+          id="password_Register"
+          type="password"
+          formControlName="password_Register"
+          placeholder="Min 10 chars, mixed case, number, special"
+          autocomplete="new-password"
+        />
+        <span class="field-error" *ngIf="fieldError('register', 'password_Register')">{{ fieldError('register', 'password_Register') }}</span>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword_Register">Confirm Password</label>
+        <input
+          id="confirmPassword_Register"
+          type="password"
+          formControlName="confirmPassword_Register"
+          placeholder="Re-enter your password"
+          autocomplete="new-password"
+        />
+        <span class="field-error" *ngIf="fieldError('register', 'confirmPassword_Register')">{{ fieldError('register', 'confirmPassword_Register') }}</span>
+        <span class="field-error" *ngIf="passwordMismatch()">Passwords do not match.</span>
+      </div>
+
+      <div *ngIf="verificationMessage()" class="info-banner">{{ verificationMessage() }}</div>
+      <div *ngIf="registerError()" class="error-banner" role="alert">{{ registerError() }}</div>
+
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Creating account...' : 'Create Account' }}
+      </button>
+    </form>
+  </div>
+</div>
