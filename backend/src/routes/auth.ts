@@ -10,6 +10,77 @@ import {
 const router = Router();
 const USERNAME_REGEX = /^[a-zA-Z0-9._]{3,30}$/;
 
+/* ── In-memory OTP store (dev-only; swap to Redis / DB for production) ── */
+interface OtpEntry {
+  code: string;
+  expiresAt: number;
+}
+const otpStore = new Map<string, OtpEntry>();
+
+function otpKey(type: string, target: string): string {
+  return `${type}:${target.trim().toLowerCase()}`;
+}
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+/* POST /api/auth/send-otp */
+router.post("/send-otp", (req: Request, res: Response) => {
+  const { type, target } = req.body as { type?: string; target?: string };
+
+  if (!type || !["email", "phone"].includes(type)) {
+    return res.status(400).json({ success: false, message: "type must be 'email' or 'phone'." });
+  }
+  if (!target?.trim()) {
+    return res.status(400).json({ success: false, message: `${type} value is required.` });
+  }
+
+  const code = generateOtp();
+  const key = otpKey(type, target);
+  otpStore.set(key, { code, expiresAt: Date.now() + 5 * 60 * 1000 });
+
+  // Log to console so the developer can grab the code easily
+  console.log(`\n🔑  OTP for ${type} "${target}": ${code}\n`);
+
+  return res.json({ success: true, message: `Verification code sent to your ${type}.` });
+});
+
+/* POST /api/auth/verify-otp */
+router.post("/verify-otp", (req: Request, res: Response) => {
+  const { type, target, code } = req.body as {
+    type?: string;
+    target?: string;
+    code?: string;
+  };
+
+  if (!type || !["email", "phone"].includes(type)) {
+    return res.status(400).json({ verified: false, message: "type must be 'email' or 'phone'." });
+  }
+  if (!target?.trim() || !code?.trim()) {
+    return res.status(400).json({ verified: false, message: "target and code are required." });
+  }
+
+  const key = otpKey(type, target);
+  const entry = otpStore.get(key);
+
+  if (!entry) {
+    return res.status(400).json({ verified: false, message: "No verification code found. Please request a new one." });
+  }
+
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(key);
+    return res.status(400).json({ verified: false, message: "Verification code has expired. Please request a new one." });
+  }
+
+  if (entry.code !== code.trim()) {
+    return res.status(400).json({ verified: false, message: "Incorrect verification code." });
+  }
+
+  otpStore.delete(key);
+  return res.json({ verified: true, message: `${type === "email" ? "Email" : "Phone number"} verified successfully.` });
+});
+
 router.get("/check-email", async (req: Request, res: Response) => {
   const email = req.query.email as string;
 

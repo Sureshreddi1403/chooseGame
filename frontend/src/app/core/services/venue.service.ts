@@ -28,9 +28,9 @@ export class VenueService {
 
   async list(options?: VenueListOptions): Promise<Venue[]> {
     const params: Record<string, string> = {};
-    if (options?.lat != null) params.lat = String(options.lat);
-    if (options?.lng != null) params.lng = String(options.lng);
-    if (options?.radiusKm != null) params.radiusKm = String(options.radiusKm);
+    if (options?.lat != null) params['lat'] = String(options.lat);
+    if (options?.lng != null) params['lng'] = String(options.lng);
+    if (options?.radiusKm != null) params['radiusKm'] = String(options.radiusKm);
 
     const httpParams = new HttpParams({ fromObject: params });
 

@@ -124,6 +124,13 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+.field input[disabled] {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
 .field-error {
   font-size: 0.82rem;
   color: #dc2626;
@@ -145,6 +152,24 @@
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.verify-button:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.verify-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #93c5fd;
+}
+
+.verify-button.sending {
+  background: #3b82f6;
+  opacity: 0.8;
 }
 
 .status {
@@ -155,6 +180,35 @@
 .status.verified {
   color: #0f766e;
   font-weight: 700;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.6rem;
+  padding: 0.3rem 0.65rem;
+}
+
+/* OTP entry row slide-in animation */
+.otp-entry {
+  animation: otpSlideIn 0.3s ease-out;
+}
+
+@keyframes otpSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .forgot-link {

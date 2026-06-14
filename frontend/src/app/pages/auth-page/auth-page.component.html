@@ -66,6 +66,60 @@
         <span class="field-error" *ngIf="fieldError('register', 'username_Register')">{{ fieldError('register', 'username_Register') }}</span>
       </div>
 
+      <!-- Phone Number -->
+      <div class="field">
+        <label for="phoneNumber_Register">Phone Number</label>
+        <input
+          id="phoneNumber_Register"
+          type="tel"
+          formControlName="phoneNumber_Register"
+          placeholder="+91 98765 43210"
+          autocomplete="tel"
+          [attr.disabled]="registerForm.get('phoneVerified_Register')?.value ? '' : null"
+        />
+        <div class="verification-row">
+          <button
+            type="button"
+            class="verify-button"
+            [class.sending]="sendingPhoneOtp()"
+            [disabled]="sendingPhoneOtp() || phoneCountdown() > 0 || registerForm.get('phoneVerified_Register')?.value"
+            (click)="sendPhoneVerificationCode()"
+          >
+            <ng-container *ngIf="sendingPhoneOtp(); else phoneOtpLabel">Sending...</ng-container>
+            <ng-template #phoneOtpLabel>
+              <ng-container *ngIf="phoneCountdown() > 0; else phoneSendLabel">Resend in {{ phoneCountdown() }}s</ng-container>
+              <ng-template #phoneSendLabel>
+                <ng-container *ngIf="phoneOtpSent(); else phoneFirstSend">Resend code</ng-container>
+                <ng-template #phoneFirstSend>Send code</ng-template>
+              </ng-template>
+            </ng-template>
+          </button>
+          <span class="status" [class.verified]="registerForm.get('phoneVerified_Register')?.value">
+            <ng-container *ngIf="registerForm.get('phoneVerified_Register')?.value; else phoneUnverified">
+              <span class="verified-badge">✓ Phone verified</span>
+            </ng-container>
+            <ng-template #phoneUnverified>Phone unverified</ng-template>
+          </span>
+        </div>
+        <div class="inline-row otp-entry" *ngIf="phoneOtpSent() && !registerForm.get('phoneVerified_Register')?.value">
+          <input
+            type="text"
+            formControlName="phoneVerificationCode_Register"
+            placeholder="Enter 6-digit code"
+            maxlength="6"
+          />
+          <button
+            type="button"
+            class="verify-button"
+            [disabled]="verifyingPhone()"
+            (click)="confirmPhoneVerification()"
+          >
+            {{ verifyingPhone() ? 'Verifying...' : 'Verify' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Email -->
       <div class="field">
         <label for="email_Register">Email ID</label>
         <input
@@ -74,7 +128,48 @@
           formControlName="email_Register"
           placeholder="you@example.com"
           autocomplete="email"
+          [attr.disabled]="registerForm.get('emailVerified_Register')?.value ? '' : null"
         />
+        <div class="verification-row">
+          <button
+            type="button"
+            class="verify-button"
+            [class.sending]="sendingEmailOtp()"
+            [disabled]="sendingEmailOtp() || emailCountdown() > 0 || registerForm.get('emailVerified_Register')?.value"
+            (click)="sendEmailVerificationCode()"
+          >
+            <ng-container *ngIf="sendingEmailOtp(); else emailOtpLabel">Sending...</ng-container>
+            <ng-template #emailOtpLabel>
+              <ng-container *ngIf="emailCountdown() > 0; else emailSendLabel">Resend in {{ emailCountdown() }}s</ng-container>
+              <ng-template #emailSendLabel>
+                <ng-container *ngIf="emailOtpSent(); else emailFirstSend">Resend code</ng-container>
+                <ng-template #emailFirstSend>Send code</ng-template>
+              </ng-template>
+            </ng-template>
+          </button>
+          <span class="status" [class.verified]="registerForm.get('emailVerified_Register')?.value">
+            <ng-container *ngIf="registerForm.get('emailVerified_Register')?.value; else emailUnverified">
+              <span class="verified-badge">✓ Email verified</span>
+            </ng-container>
+            <ng-template #emailUnverified>Email unverified</ng-template>
+          </span>
+        </div>
+        <div class="inline-row otp-entry" *ngIf="emailOtpSent() && !registerForm.get('emailVerified_Register')?.value">
+          <input
+            type="text"
+            formControlName="emailVerificationCode_Register"
+            placeholder="Enter 6-digit code"
+            maxlength="6"
+          />
+          <button
+            type="button"
+            class="verify-button"
+            [disabled]="verifyingEmail()"
+            (click)="confirmEmailVerification()"
+          >
+            {{ verifyingEmail() ? 'Verifying...' : 'Verify' }}
+          </button>
+        </div>
         <span class="field-error" *ngIf="fieldError('register', 'email_Register')">{{ fieldError('register', 'email_Register') }}</span>
       </div>
 

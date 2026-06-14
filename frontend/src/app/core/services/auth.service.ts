@@ -31,6 +31,16 @@ export interface EmailCheckResponse {
   message?: string;
 }
 
+export interface OtpSendResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface OtpVerifyResponse {
+  verified: boolean;
+  message?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -68,6 +78,21 @@ export class AuthService {
   forgotPassword(email: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/forgot-password`, {
       email,
+    });
+  }
+
+  sendOtp(type: 'email' | 'phone', target: string): Observable<OtpSendResponse> {
+    return this.http.post<OtpSendResponse>(`${this.apiUrl}/auth/send-otp`, {
+      type,
+      target,
+    });
+  }
+
+  verifyOtp(type: 'email' | 'phone', target: string, code: string): Observable<OtpVerifyResponse> {
+    return this.http.post<OtpVerifyResponse>(`${this.apiUrl}/auth/verify-otp`, {
+      type,
+      target,
+      code,
     });
   }
 }

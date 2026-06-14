@@ -163,7 +163,7 @@ export class HomePageComponent implements OnInit {
         state: '',
         latitude: place.geometry?.location?.lat?.(),
         longitude: place.geometry?.location?.lng?.(),
-        distance: this.distanceKm(this._userLat, this._userLng, place.geometry?.location?.lat?.(), place.geometry?.location?.lng?.()),
+        distance: this.distanceKm(this._userLat ?? 0, this._userLng ?? 0, place.geometry?.location?.lat?.() ?? 0, place.geometry?.location?.lng?.() ?? 0),
         games_available: ['Basketball', 'Tennis', 'Soccer', 'Volleyball'],
       }));
 
