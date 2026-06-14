@@ -4,6 +4,8 @@ import cors from "cors";
 import authRoutes from "./routes/auth";
 import venuesRoutes from "./routes/venues";
 import playRequestsRoutes from "./routes/playRequests";
+import playersRoutes from "./routes/players";
+import profileRoutes from "./routes/profile";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -23,6 +25,8 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/venues", venuesRoutes);
 app.use("/api/play-requests", playRequestsRoutes);
+app.use("/api/players", playersRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.listen(PORT, () => {
   console.log(`MultiSport API running on http://localhost:${PORT}`);

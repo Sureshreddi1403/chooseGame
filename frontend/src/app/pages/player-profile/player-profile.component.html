@@ -1,0 +1,234 @@
+<div class="pp-shell">
+
+  <!-- ══ NAV ══ -->
+  <header class="pp-nav">
+    <button class="back-btn" (click)="goBack()" id="profile-back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      Home
+    </button>
+    <div class="nav-brand">
+      <span>⚙️</span>
+      <span>My Player Profile</span>
+    </div>
+    <button class="find-players-btn" (click)="goToPlayers()">👥 Find Players</button>
+  </header>
+
+  <!-- ══ LOADING ══ -->
+  <div class="loading-screen" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Loading your profile…</p>
+  </div>
+
+  <!-- ══ NO SESSION ══ -->
+  <div class="not-signed-in" *ngIf="!loading() && !userId">
+    <div class="ns-icon">🔐</div>
+    <h2>Please sign in first</h2>
+    <button (click)="goBack()">Go to Sign In</button>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="pp-content" *ngIf="!loading() && userId">
+
+    <!-- LEFT: Identity card -->
+    <aside class="pp-sidebar">
+      <div class="id-card">
+        <div class="avatar-ring">
+          <div class="avatar">{{ initials }}</div>
+        </div>
+        <h2 class="profile-name">{{ profile.username || profile.first_name || 'Player' }}</h2>
+        <p class="profile-joined" *ngIf="profile.created_at">Member since {{ profile.created_at | date:'MMM yyyy' }}</p>
+
+        <div class="skill-badge" *ngIf="skillLevel" [class]="'skill-' + skillLevel">
+          {{ skillLevel | titlecase }}
+        </div>
+
+        <!-- Sport pills -->
+        <div class="sidebar-sports" *ngIf="sportPrefs.length">
+          <ng-container *ngFor="let s of sports">
+            <span class="sport-pill-sm" *ngIf="sportPrefs.includes(s.value)">
+              {{ s.icon }} {{ s.label }}
+            </span>
+          </ng-container>
+        </div>
+        <p class="no-sports" *ngIf="!sportPrefs.length">No sports selected yet.</p>
+
+        <!-- Discoverable toggle -->
+        <div class="discoverable-wrap">
+          <label class="toggle-label" for="discoverable-toggle">
+            <span>Show me to other players</span>
+            <div class="toggle" [class.on]="isDiscoverable" (click)="isDiscoverable = !isDiscoverable" id="discoverable-toggle">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <p class="toggle-hint">When ON, you'll appear on the Players Dashboard so others can challenge you.</p>
+        </div>
+      </div>
+
+      <!-- Location summary -->
+      <div class="location-summary" *ngIf="playerLat && playerLng">
+        <div class="ls-icon">📍</div>
+        <div class="ls-info">
+          <strong>Playing location set</strong>
+          <p>{{ locationLabel || (playerLat | number:'1.4-4') + ', ' + (playerLng | number:'1.4-4') }}</p>
+        </div>
+        <button class="clear-loc-btn" (click)="clearLocation()" title="Clear location">✕</button>
+      </div>
+      <div class="location-summary missing" *ngIf="!playerLat || !playerLng">
+        <div class="ls-icon">⚠️</div>
+        <div class="ls-info">
+          <strong>No location set</strong>
+          <p>Set a location below so other players can see your distance.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Editor -->
+    <main class="pp-main">
+
+      <!-- Save alerts -->
+      <div class="alert success" *ngIf="saveSuccess()">✅ Profile saved successfully!</div>
+      <div class="alert error" *ngIf="saveError()">⚠️ {{ saveError() }}</div>
+
+      <!-- ── Bio ── -->
+      <section class="editor-section">
+        <h3 class="section-title">
+          <span class="section-icon">📝</span> About You
+        </h3>
+        <textarea
+          id="bio-input"
+          class="bio-textarea"
+          [(ngModel)]="bio"
+          placeholder="Tell other players about yourself — your experience, favourite sports, availability…"
+          rows="4"
+          maxlength="400"
+        ></textarea>
+        <div class="char-count">{{ bio.length }}/400</div>
+      </section>
+
+      <!-- ── Skill level ── -->
+      <section class="editor-section">
+        <h3 class="section-title">
+          <span class="section-icon">🎯</span> Skill Level
+        </h3>
+        <div class="skill-grid">
+          <button
+            *ngFor="let s of skillLevels"
+            type="button"
+            class="skill-btn"
+            [class.active]="skillLevel === s.value"
+            (click)="skillLevel = s.value"
+            [id]="'skill-' + s.value"
+          >
+            {{ s.label }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Sports ── -->
+      <section class="editor-section">
+        <h3 class="section-title">
+          <span class="section-icon">🏆</span> Sports You Play
+        </h3>
+        <div class="sports-grid">
+          <button
+            *ngFor="let sport of sports"
+            type="button"
+            class="sport-toggle"
+            [class.selected]="sportPrefs.includes(sport.value)"
+            (click)="toggleSport(sport.value)"
+            [id]="'sport-toggle-' + sport.value"
+          >
+            <span class="sport-emoji">{{ sport.icon }}</span>
+            <span>{{ sport.label }}</span>
+            <span class="checkmark" *ngIf="sportPrefs.includes(sport.value)">✓</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ── Location ── -->
+      <section class="editor-section">
+        <h3 class="section-title">
+          <span class="section-icon">📍</span> Playing Location
+        </h3>
+        <p class="section-sub">Set where you usually play so other players can see your distance.</p>
+
+        <!-- Tab switcher -->
+        <div class="loc-tabs">
+          <button
+            type="button"
+            class="loc-tab"
+            [class.active]="locationTab() === 'gps'"
+            (click)="switchToGps()"
+            id="loc-tab-gps"
+          >
+            📡 Use my GPS
+          </button>
+          <button
+            type="button"
+            class="loc-tab"
+            [class.active]="locationTab() === 'map'"
+            (click)="switchToMap()"
+            id="loc-tab-map"
+          >
+            🗺️ Pick on map
+          </button>
+        </div>
+
+        <!-- GPS panel -->
+        <div class="loc-panel" *ngIf="locationTab() === 'gps'">
+          <div class="gps-set" *ngIf="playerLat && playerLng && locationTab() === 'gps'">
+            <span class="gps-pin-icon">📍</span>
+            <span>{{ locationLabel || (playerLat | number:'1.4-4') + ', ' + (playerLng | number:'1.4-4') }}</span>
+          </div>
+          <button
+            class="gps-btn"
+            type="button"
+            (click)="useGps()"
+            [disabled]="gpsLoading()"
+            id="use-gps-btn"
+          >
+            <span *ngIf="!gpsLoading()">📡 {{ playerLat ? 'Refresh location' : 'Detect my location' }}</span>
+            <span *ngIf="gpsLoading()">Detecting…</span>
+          </button>
+          <p class="gps-error" *ngIf="gpsError()">{{ gpsError() }}</p>
+        </div>
+
+        <!-- Map panel -->
+        <div class="loc-panel map-panel" *ngIf="locationTab() === 'map'">
+          <!-- Search box -->
+          <div class="map-search-wrap">
+            <svg class="map-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              id="map-search-input"
+              type="text"
+              class="map-search-input"
+              placeholder="Search for a venue or address…"
+            />
+          </div>
+          <!-- Map canvas -->
+          <div id="profile-map" class="profile-map-canvas"></div>
+          <p class="map-hint">Click anywhere on the map to drop a pin, or drag the pin to adjust.</p>
+          <div class="map-selected" *ngIf="playerLat && locationTab() === 'map'">
+            📍 <strong>Selected:</strong> {{ locationLabel || (playerLat | number:'1.4-4') + ', ' + (playerLng | number:'1.4-4') }}
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Save ── -->
+      <div class="save-row">
+        <button
+          class="save-btn"
+          type="button"
+          (click)="save()"
+          [disabled]="saving()"
+          id="save-profile-btn"
+        >
+          <span *ngIf="!saving()">💾 Save Profile</span>
+          <span *ngIf="saving()">Saving…</span>
+        </button>
+        <p class="save-hint">Changes are saved to your account and visible to other players if discovery is ON.</p>
+      </div>
+
+    </main>
+  </div>
+</div>

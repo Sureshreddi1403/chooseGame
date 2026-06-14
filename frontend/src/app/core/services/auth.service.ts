@@ -45,7 +45,15 @@ export interface OtpVerifyResponse {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
-  currentUserId: string | null = null;
+
+  get currentUserId(): string | null {
+    return localStorage.getItem('pg_user_id');
+  }
+
+  set currentUserId(id: string | null) {
+    if (id) localStorage.setItem('pg_user_id', id);
+    else localStorage.removeItem('pg_user_id');
+  }
 
   signIn(payload: SignInRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/signin`, payload).pipe(

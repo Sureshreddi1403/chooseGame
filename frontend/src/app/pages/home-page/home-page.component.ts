@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { VenueService, Venue } from '../../core/services/venue.service';
 import { PlayRequestService, PlayRequest } from '../../core/services/play-request.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -30,6 +31,7 @@ export class HomePageComponent implements OnInit {
   private venueService = inject(VenueService);
   private playRequestService = inject(PlayRequestService);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   venues: Venue[] = [];
   nearby: Venue[] = [];
@@ -370,6 +372,14 @@ export class HomePageComponent implements OnInit {
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  }
+
+  goToPlayers() {
+    this.router.navigate(['/players']);
+  }
+
+  goToProfile() {
+    this.router.navigate(['/profile']);
   }
 
   deg2rad(deg: number) {
