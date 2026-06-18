@@ -1,7 +1,7 @@
 <section class="dashboard">
   <div class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">Playo-style court discovery</p>
+      <p class="eyebrow">Local Sports Community</p>
       <h1>Find courts and book games within 10 km.</h1>
       <p class="hero-text">Use your current location to discover nearby venues, post game requests, and coordinate matches with players.</p>
 
@@ -46,11 +46,7 @@
       <strong>{{ venues.length }}</strong>
       <p>Available venues loaded from the backend.</p>
     </article>
-    <article class="stat-card">
-      <span class="stat-label">Active match chat</span>
-      <strong>{{ chatThreads.length }}</strong>
-      <p>Chat rooms for accepted match requests.</p>
-    </article>
+
   </div>
 
   <section class="play-request-section">
@@ -157,56 +153,7 @@
     <p *ngIf="bookingError" class="error-banner">{{ bookingError }}</p>
   </section>
 
-  <section class="chat-section">
-    <div class="section-header">
-      <div>
-        <h2>Match chat</h2>
-        <p>Accepted requests open a chat space for players.</p>
-      </div>
-    </div>
 
-    <div *ngIf="chatThreads.length; else noChats" class="chat-layout">
-      <aside class="chat-list">
-        <button
-          type="button"
-          *ngFor="let thread of chatThreads"
-          class="chat-thread"
-          [class.active]="selectedChat?.id === thread.id"
-          (click)="openChat(thread)"
-        >
-          <span>{{ thread.title }}</span>
-          <small class="thread-status" [class.pending]="thread.status === 'pending'" [class.matched]="thread.status === 'matched'">
-            {{ thread.status }}
-          </small>
-        </button>
-      </aside>
-
-      <div class="chat-window" *ngIf="selectedChat">
-        <div class="messages">
-          <div *ngFor="let message of selectedChat.messages" class="message">
-            <strong>{{ message.author }}:</strong>
-            <span>{{ message.text }}</span>
-            <small>{{ message.time }}</small>
-          </div>
-        </div>
-
-        <div class="chat-actions">
-          <input type="text" [(ngModel)]="newChatMessage" placeholder="Send a message" />
-          <button type="button" class="btn-primary" (click)="sendChatMessage()" [disabled]="!newChatMessage.trim()">Send</button>
-        </div>
-
-        <button type="button" *ngIf="selectedChat.status === 'pending'" class="secondary" (click)="acceptMatch(selectedChat)">
-          Accept match
-        </button>
-      </div>
-    </div>
-
-    <ng-template #noChats>
-      <div class="empty-state">
-        <p>No active chats yet. Submit a game request or book a venue to start matchmaking.</p>
-      </div>
-    </ng-template>
-  </section>
 </section>
 
 <!-- Floating Notifications Bell -->

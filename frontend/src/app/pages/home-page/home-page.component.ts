@@ -8,18 +8,6 @@ import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
-interface ChatMessage {
-  author: string;
-  text: string;
-  time: string;
-}
-
-interface ChatThread {
-  id: string;
-  title: string;
-  status: 'pending' | 'matched';
-  messages: ChatMessage[];
-}
 
 @Component({
   selector: 'app-home-page',
@@ -41,10 +29,6 @@ export class HomePageComponent implements OnInit {
   selectedGame = '';
   bookingMessage = '';
   bookingError = '';
-
-  chatThreads: ChatThread[] = [];
-  selectedChat: ChatThread | null = null;
-  newChatMessage = '';
 
   loading = false;
   locationError = '';
@@ -213,44 +197,8 @@ export class HomePageComponent implements OnInit {
 
     this.bookingError = '';
     this.bookingMessage = `Booked ${this.selectedGame} at ${this.selectedVenue.name}. Invite nearby players and start chatting once confirmed.`;
-
-    if (this.chatThreads.length === 0) {
-      this.chatThreads.push({
-        id: `match-${Date.now()}`,
-        title: `${this.selectedGame} match at ${this.selectedVenue.name}`,
-        status: 'pending',
-        messages: [
-          { author: 'System', text: 'Waiting for nearby players to accept your request.', time: new Date().toLocaleTimeString() },
-        ],
-      });
-    }
   }
 
-  openChat(thread: ChatThread) {
-    this.selectedChat = thread;
-    this.newChatMessage = '';
-  }
-
-  sendChatMessage() {
-    if (!this.selectedChat || !this.newChatMessage.trim()) return;
-
-    this.selectedChat.messages.push({
-      author: 'You',
-      text: this.newChatMessage.trim(),
-      time: new Date().toLocaleTimeString(),
-    });
-    this.newChatMessage = '';
-  }
-
-  acceptMatch(thread: ChatThread) {
-    thread.status = 'matched';
-    thread.messages.push({
-      author: 'System',
-      text: 'Your game request has been accepted. Use the chat below to coordinate.',
-      time: new Date().toLocaleTimeString(),
-    });
-    this.selectedChat = thread;
-  }
 
   private _map: any = null;
   private _userLat?: number;

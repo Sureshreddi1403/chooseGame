@@ -28,8 +28,8 @@
 }
 
 .hero-copy h1 {
-  font-size: clamp(2.5rem, 4vw, 3.4rem);
-  line-height: 1.05;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  line-height: 1.1;
   margin: 0;
 }
 
@@ -108,7 +108,7 @@
 }
 
 .hero-map {
-  min-height: 420px;
+  min-height: 320px;
   border-radius: 28px;
   overflow: hidden;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
@@ -127,15 +127,14 @@
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   margin-bottom: 32px;
 }
 
 .play-request-section,
 .venue-section,
-.booking-panel,
-.chat-section {
+.booking-panel {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 28px;
@@ -253,60 +252,81 @@
 
 .venue-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .venue-card {
   display: flex;
   flex-direction: column;
-  background: #eef2ff;
-  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid transparent;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04);
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .venue-card:hover,
 .venue-card.selected {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.12);
   border-color: #93c5fd;
 }
 
 .venue-image {
-  min-height: 180px;
-  background: linear-gradient(135deg, #1d4ed8, #7dd3fc);
+  min-height: 130px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  position: relative;
+}
+
+.venue-image::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
 }
 
 .venue-details {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 20px;
-  gap: 16px;
+  padding: 16px;
+  gap: 12px;
 }
 
 .venue-details h3 {
-  margin: 0 0 6px;
-  font-size: 1.1rem;
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .venue-details p {
   margin: 0;
-  color: #475569;
+  color: #64748b;
+  font-size: 0.85rem;
 }
 
 .venue-meta {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
 }
 
 .venue-address {
-  margin: 0 20px 20px;
-  color: #475569;
-  font-size: 0.95rem;
+  margin: 0 16px 16px;
+  color: #64748b;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .venue-summary {
@@ -315,96 +335,7 @@
   font-weight: 700;
 }
 
-.chat-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
-}
-
-.chat-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.chat-thread {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 18px;
-  background: #f8fafc;
-  border: 1px solid #dbeafe;
-  cursor: pointer;
-  text-align: left;
-}
-
-.chat-thread.active {
-  background: #e0f2fe;
-  border-color: #93c5fd;
-}
-
-.thread-status {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.thread-status.pending {
-  color: #f97316;
-}
-
-.thread-status.matched {
-  color: #0f766e;
-}
-
-.chat-window {
-  background: #f8fafc;
-  border-radius: 20px;
-  padding: 20px;
-  border: 1px solid #dbeafe;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.messages {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.message {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  padding: 14px 16px;
-  border-radius: 16px;
-}
-
-.message small {
-  display: block;
-  margin-top: 6px;
-  color: #64748b;
-}
-
-.chat-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.chat-actions input {
-  flex: 1;
-  border: 1px solid #cbd5e1;
-  border-radius: 18px;
-  padding: 14px 16px;
-  background: #fff;
-}
-
-.booking-panel button,
-.chat-window button {
+.booking-panel button {
   border: none;
   border-radius: 18px;
   padding: 14px 18px;
@@ -412,12 +343,6 @@
   cursor: pointer;
   background: #1d4ed8;
   color: #fff;
-}
-
-.chat-window button.secondary {
-  background: #eef2ff;
-  color: #1d4ed8;
-  border: 1px solid #93c5fd;
 }
 
 .empty-state {
@@ -434,17 +359,14 @@
   }
 
   .venue-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .chat-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 720px) {
   .dashboard {
     padding: 16px;
+    padding-bottom: 100px;
   }
 
   .search-bar {
@@ -461,11 +383,17 @@
   }
 
   .venue-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .play-request-grid,
   .booking-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .venue-grid {
     grid-template-columns: 1fr;
   }
 }
