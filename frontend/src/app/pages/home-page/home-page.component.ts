@@ -1,10 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { VenueService, Venue } from '../../core/services/venue.service';
 import { PlayRequestService, PlayRequest } from '../../core/services/play-request.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ChallengeService } from '../../core/services/challenge.service';
 import { environment } from '../../../environments/environment';
 import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
@@ -16,10 +17,11 @@ import { RequestsBoardComponent } from '../requests-board/requests-board.compone
   standalone: true,
   imports: [CommonModule, FormsModule, RequestsBoardComponent],
 })
-export class HomePageComponent implements OnInit {
+export class HomePageComponent implements OnInit, OnDestroy {
   private venueService = inject(VenueService);
   private playRequestService = inject(PlayRequestService);
   private authService = inject(AuthService);
+  private challengeService = inject(ChallengeService);
   private router = inject(Router);
 
   venues: Venue[] = [];
@@ -40,6 +42,8 @@ export class HomePageComponent implements OnInit {
 
   // Notifications Sidebar
   showRequestsSidebar = false;
+  pendingCount = 0;
+  private _notifInterval: any;
 
   playRequestMessage = '';
   playRequestError = '';
@@ -73,48 +77,38 @@ export class HomePageComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+    this.loadPendingCount();
+    this._notifInterval = setInterval(() => this.loadPendingCount(), 15000);
   }
 
+  ngOnDestroy() {
+    if (this._notifInterval) clearInterval(this._notifInterval);
+  }
 
+  loadPendingCount() {
+    const userId = this.authService.currentUserId;
+    if (!userId) return;
+    this.challengeService.getReceivedChallenges(userId).subscribe({
+      next: (res) => {
+        this.pendingCount = (res.data || []).filter(c => c.status === 'pending').length;
+      },
+      error: () => {} // silent fail for background poll
+    });
+  }
 
   async searchMapVenues() {
     this.locationLoading = true;
     this.locationError = '';
 
     try {
-      const pos = await new Promise<GeolocationPosition>((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej)
-      );
+      if (this._userLat == null || this._userLng == null) {
+        const pos = await new Promise<GeolocationPosition>((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej)
+        );
+        this._userLat = pos.coords.latitude;
+        this._userLng = pos.coords.longitude;
+      }
 
-      const { latitude, longitude } = pos.coords;
-      this._userLat = latitude;
-      this._userLng = longitude;
-
-      this.nearby = await this.venueService.list({
-        lat: latitude,
-        lng: longitude,
-        radiusKm: 10,
-      });
-      this.showingNearby = true;
-      this.filteredVenues = [...this.nearby];
-
-      this.applySearch();
-      await this.initMap();
-    } catch (error: any) {
-      this.locationError =
-        error?.message || 'Unable to determine your location. Please allow location access.';
-    } finally {
-      this.locationLoading = false;
-    }
-  }
-
-  async searchMapVenues() {
-    if (this._userLat == null || this._userLng == null) {
-      this.locationError = 'Please allow location access first by clicking Use my location.';
-      return;
-    }
-
-    try {
       const google = (window as any).google;
       if (!google || !google.maps || !google.maps.places) {
         await this.loadGoogleMaps(environment.googleMapsApiKey);
@@ -136,6 +130,8 @@ export class HomePageComponent implements OnInit {
           console.log('Google Places response:', { status, placesCount: places?.length });
           if (status === (window as any).google.maps.places.PlacesServiceStatus.OK) {
             resolve(places || []);
+          } else if (status === (window as any).google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            resolve([]);
           } else {
             reject(status);
           }
@@ -165,7 +161,7 @@ export class HomePageComponent implements OnInit {
       this.locationError =
         typeof error === 'string'
           ? `Map search failed: ${error}`
-          : 'Unable to search map venues. Please try again.';
+          : error?.message || 'Unable to determine your location or search map venues.';
     } finally {
       this.locationLoading = false;
     }

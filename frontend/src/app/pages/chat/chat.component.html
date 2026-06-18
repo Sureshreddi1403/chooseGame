@@ -1,59 +1,167 @@
 <div class="chat-shell">
-  <header class="chat-nav">
-    <button class="back-btn" (click)="goBack()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
-      Back
+
+  <!-- ══════════ HEADER ══════════ -->
+  <header class="chat-header">
+    <button class="header-btn back-btn" (click)="goBack()" title="Go back">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5m7-7-7 7 7 7"/>
+      </svg>
     </button>
-    <div class="nav-brand">
-      <span class="nav-icon">💬</span>
-      <span>Match Chat</span>
+
+    <div class="header-center">
+      <div class="header-avatar">
+        <div class="opponent-initials">{{ opponentInitials() }}</div>
+        <span class="online-dot" [class.online]="opponentOnline()"></span>
+      </div>
+      <div class="header-info">
+        <h1 class="header-title">{{ opponentName() }}</h1>
+        <span class="header-presence" [class.is-online]="opponentOnline()">
+          <span class="presence-dot" [class.online]="opponentOnline()"></span>
+          <span>{{ opponentOnline() ? 'Online' : (opponentLastSeen() || (sportEmoji() + ' ' + sportName() + ' · Match Chat')) }}</span>
+        </span>
+      </div>
     </div>
-    <div class="nav-right"></div>
+
+    <div class="header-actions">
+      <div class="live-indicator" title="Polling for new messages every 2s">
+        <span class="live-dot"></span>
+        <span class="live-label">Live</span>
+      </div>
+      <button class="header-btn close-btn" (click)="close()" title="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
-  <div class="chat-container">
-    <div class="chat-main">
-      <div class="error-banner" *ngIf="error()">
-        {{ error() }}
-      </div>
-
-      <div class="messages-area" #messagesContainer>
-        <div class="loading-state" *ngIf="loading()">
-          <div class="spinner"></div>
-          <p>Loading messages...</p>
-        </div>
-
-        <div class="empty-state" *ngIf="!loading() && messages().length === 0 && !error()">
-          <div class="empty-icon">👋</div>
-          <h3>Start the conversation!</h3>
-          <p>Send a message to coordinate your match.</p>
-        </div>
-
-        <div class="message" 
-             *ngFor="let msg of messages()" 
-             [class.mine]="msg.sender_id === currentUserId">
-          <div class="msg-bubble">
-            {{ msg.content }}
-          </div>
-          <div class="msg-meta">
-            {{ formatTime(msg.created_at) }}
-          </div>
-        </div>
-      </div>
-
-      <div class="chat-input-area" *ngIf="!error()">
-        <input 
-          type="text" 
-          placeholder="Type your message..." 
-          [ngModel]="newMessage()"
-          (ngModelChange)="newMessage.set($event)"
-          (keyup.enter)="sendMessage()"
-          [disabled]="sending()"
-        />
-        <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage().trim() || sending()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-        </button>
-      </div>
-    </div>
+  <!-- ══════════ ERROR BANNER ══════════ -->
+  <div class="error-banner" *ngIf="error()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+    </svg>
+    {{ error() }}
+    <button class="error-dismiss" (click)="error.set('')">✕</button>
   </div>
+
+  <!-- ══════════ MESSAGES ══════════ -->
+  <div class="messages-area" #messagesContainer (scroll)="onMessagesScroll($event)">
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading()">
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <p>Loading messages…</p>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!loading() && messages().length === 0 && !error()">
+      <div class="empty-icon">{{ sportEmoji() }}</div>
+      <h3>Start the conversation!</h3>
+      <p>Coordinate your <strong>{{ sportName() }}</strong> match with {{ opponentName() }}.</p>
+    </div>
+
+    <!-- Push messages to bottom when list is short -->
+    <div class="msg-spacer" *ngIf="!loading() && messages().length > 0"></div>
+
+    <!-- Messages list -->
+    <ng-container *ngFor="let msg of messages(); trackBy: trackById">
+
+      <!-- Date divider -->
+      <div class="date-divider" *ngIf="msg.showDate">
+        <span>{{ msg.dateLabel }}</span>
+      </div>
+
+      <!-- Message row -->
+      <div class="msg-row" [class.mine]="isMine(msg)" [class.optimistic]="msg.optimistic">
+
+        <!-- Opponent avatar (only shown on first of a group) -->
+        <div class="msg-avatar" *ngIf="!isMine(msg)">
+          <div class="avatar-circle" *ngIf="msg.showAvatar">{{ opponentInitials() }}</div>
+          <div class="avatar-spacer" *ngIf="!msg.showAvatar"></div>
+        </div>
+
+        <!-- Bubble -->
+        <div class="msg-bubble-wrap">
+          <div class="msg-bubble" [class.mine]="isMine(msg)">
+            <span class="msg-content">{{ msg.content }}</span>
+            <div class="msg-footer">
+              <span class="msg-time">{{ formatTime(msg.created_at) }}</span>
+
+              <!-- Message status ticks — only on outgoing messages -->
+              <span class="msg-status" *ngIf="isMine(msg)">
+
+                <!-- Sending: animated dots -->
+                <span *ngIf="msg.status === 'sending'" class="sending-dots">
+                  <span></span><span></span><span></span>
+                </span>
+
+                <!-- Sent: single grey tick -->
+                <ng-container *ngIf="msg.status === 'sent'">
+                  <svg class="tick tick-sent" width="14" height="10" viewBox="0 0 16 12" fill="none">
+                    <path d="M1.5 6L5.5 10L14.5 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </ng-container>
+
+                <!-- Delivered: double grey ticks -->
+                <ng-container *ngIf="msg.status === 'delivered'">
+                  <svg class="tick tick-delivered" width="18" height="10" viewBox="0 0 20 12" fill="none">
+                    <path d="M1.5 6L5.5 10L14.5 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 6L10 10L19 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </ng-container>
+
+                <!-- Read: double BLUE ticks -->
+                <ng-container *ngIf="msg.status === 'read'">
+                  <svg class="tick tick-read" width="18" height="10" viewBox="0 0 20 12" fill="none">
+                    <path d="M1.5 6L5.5 10L14.5 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 6L10 10L19 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </ng-container>
+
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+  </div>
+
+  <!-- ══════════ SCROLL TO BOTTOM PILL ══════════ -->
+  <div class="scroll-pill" [class.visible]="showScrollBtn()" (click)="scrollToBottomClick()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M12 5v14m-7-7 7 7 7-7"/>
+    </svg>
+    <span *ngIf="hasNewMessages()">New messages</span>
+  </div>
+
+  <!-- ══════════ INPUT BAR ══════════ -->
+  <div class="chat-input-bar" *ngIf="!error()">
+    <textarea
+      class="chat-input"
+      placeholder="Type a message…"
+      rows="1"
+      [ngModel]="newMessage()"
+      (ngModelChange)="newMessage.set($event)"
+      (keydown)="onKeydown($event)"
+      [disabled]="sending()"
+      autocomplete="off"
+    ></textarea>
+
+    <button
+      class="send-btn"
+      (click)="sendMessage()"
+      [disabled]="!newMessage().trim() || sending()"
+      [class.active]="newMessage().trim()"
+      title="Send"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+      </svg>
+    </button>
+  </div>
+
 </div>

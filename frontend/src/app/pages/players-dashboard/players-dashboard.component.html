@@ -137,10 +137,24 @@
             </div>
           </div>
 
-          <!-- Challenge arrow -->
-          <button class="challenge-btn" [style.background]="sportAccent(primarySport(player))" title="Challenge to a match" (click)="openChallengeModal(player, $event)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-          </button>
+          <!-- Challenge arrow / status -->
+          <ng-container *ngIf="getChallengeForPlayer(player.id) as challenge; else canChallengeBlock">
+            <!-- Pending: show a pulsing clock pill -->
+            <div class="status-pill pending" *ngIf="challenge.status === 'pending'" title="Challenge pending">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Pending
+            </div>
+            <!-- Accepted: show a checkmark pill -->
+            <div class="status-pill accepted" *ngIf="challenge.status === 'accepted'" title="Challenge accepted">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              Matched
+            </div>
+          </ng-container>
+          <ng-template #canChallengeBlock>
+            <button class="challenge-btn" [style.background]="sportAccent(primarySport(player))" title="Challenge to a match" (click)="openChallengeModal(player, $event)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+            </button>
+          </ng-template>
         </div>
 
         <!-- Empty state -->
@@ -200,9 +214,21 @@
             </div>
           </div>
           <p class="detail-bio" *ngIf="p.bio">{{ p.bio }}</p>
-          <button class="challenge-full-btn" [style.background]="'linear-gradient(135deg,' + sportAccent(primarySport(p)) + ' 0%,#1d4ed8 100%)'" (click)="openChallengeModal(p)">
-            🎯 Challenge to a Match
-          </button>
+          <!-- Challenge / Status for detail card -->
+          <ng-container *ngIf="getChallengeForPlayer(p.id) as challenge; else detailChallengeBlock">
+            <div class="detail-status-pill pending" *ngIf="challenge.status === 'pending'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              Challenge Pending — waiting for response
+            </div>
+            <button class="challenge-full-btn matched-btn" *ngIf="challenge.status === 'accepted'" [style.background]="'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'" [routerLink]="['/chat', challenge.id]">
+              💬 Open Chat
+            </button>
+          </ng-container>
+          <ng-template #detailChallengeBlock>
+            <button class="challenge-full-btn" [style.background]="'linear-gradient(135deg,' + sportAccent(primarySport(p)) + ' 0%,#1d4ed8 100%)'" (click)="openChallengeModal(p)">
+              🎯 Challenge to a Match
+            </button>
+          </ng-template>
         </div>
     </div>
   </div>

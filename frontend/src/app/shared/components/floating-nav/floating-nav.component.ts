@@ -18,6 +18,10 @@ import { AuthService } from '../../../core/services/auth.service';
         <span class="nav-icon">📍</span>
         <span class="nav-label">Find</span>
       </a>
+      <a routerLink="/chats" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">Chats</span>
+      </a>
       <a routerLink="/profile" routerLinkActive="active" class="nav-item">
         <span class="nav-icon">👤</span>
         <span class="nav-label">Profile</span>
@@ -128,6 +132,8 @@ export class FloatingNavComponent {
 
   shouldShowNav(): boolean {
     if (!this.authService.currentUserId) return false;
-    return !this.hiddenRoutes.includes(this.currentUrl);
+    if (this.hiddenRoutes.includes(this.currentUrl)) return false;
+    if (this.currentUrl.startsWith('/chat')) return false;
+    return true;
   }
 }

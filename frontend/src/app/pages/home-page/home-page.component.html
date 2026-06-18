@@ -159,6 +159,7 @@
 <!-- Floating Notifications Bell -->
 <button class="floating-bell" (click)="toggleRequests()">
   🔔
+  <span class="bell-badge" *ngIf="pendingCount > 0">{{ pendingCount > 9 ? '9+' : pendingCount }}</span>
 </button>
 
 <app-requests-board *ngIf="showRequestsSidebar" (close)="toggleRequests()"></app-requests-board>

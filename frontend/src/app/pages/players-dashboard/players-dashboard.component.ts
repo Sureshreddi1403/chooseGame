@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { PlayerService, Player } from '../../core/services/player.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ChallengeService } from '../../core/services/challenge.service';
+import { ChallengeService, Challenge } from '../../core/services/challenge.service';
 import { environment } from '../../../environments/environment';
 import { RequestsBoardComponent } from '../requests-board/requests-board.component';
 
@@ -22,7 +22,7 @@ interface DistanceFilter {
 @Component({
   selector: 'app-players-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RequestsBoardComponent],
+  imports: [CommonModule, FormsModule, RequestsBoardComponent, RouterModule],
   templateUrl: './players-dashboard.component.html',
   styleUrl: './players-dashboard.component.scss',
 })
@@ -52,6 +52,9 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
 
   // Requests Sidebar
   showRequestsSidebar = false;
+
+  /* ── Sent challenge tracking ── */
+  sentChallengesMap = signal<Map<string, Challenge>>(new Map());
 
   private _userLat?: number;
   private _userLng?: number;
@@ -113,6 +116,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
 
     await this.detectLocation();
     this.loadPlayers();
+    this.loadSentChallenges();
   }
 
   ngOnDestroy() {
@@ -377,6 +381,42 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
 
   trackById(_: number, p: Player) { return p.id; }
 
+  /* ── Sent Challenges ── */
+  loadSentChallenges() {
+    const userId = this.authService.currentUserId;
+    if (!userId) return;
+    this.challengeService.getSentChallenges(userId).subscribe({
+      next: (res) => {
+        const map = new Map<string, Challenge>();
+        for (const c of (res.data || [])) {
+          const rid = c.receiver_id;
+          if (!rid) continue;
+          // Keep most recent challenge per receiver (they arrive sorted already)
+          const existing = map.get(rid);
+          if (!existing || new Date(c.created_at) > new Date(existing.created_at)) {
+            map.set(rid, c);
+          }
+        }
+        this.sentChallengesMap.set(map);
+      },
+      error: () => {} // silent
+    });
+  }
+
+  /** Get the latest sent challenge to this player (if any, non-rejected) */
+  getChallengeForPlayer(playerId: string): Challenge | null {
+    const c = this.sentChallengesMap().get(playerId);
+    if (!c) return null;
+    // If rejected, treat as no challenge (allow re-sending)
+    if (c.status === 'rejected') return null;
+    return c;
+  }
+
+  /** Whether a challenge button should be disabled for this player */
+  canChallenge(playerId: string): boolean {
+    return !this.getChallengeForPlayer(playerId);
+  }
+
   mapStyles() {
     return [
       { elementType: 'geometry',   stylers: [{ color: '#f1f5f9' }] },
@@ -434,6 +474,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
       next: () => {
         this.challengeLoading.set(false);
         this.challengeSuccess.set(true);
+        this.loadSentChallenges(); // refresh the map
         setTimeout(() => this.closeChallengeModal(), 2000);
       },
       error: (err) => {
