@@ -81,24 +81,37 @@ export class HomePageComponent implements OnInit {
     this.locationLoading = true;
     this.locationError = '';
 
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej)
+      );
+
+      const { latitude, longitude } = pos.coords;
+      this._userLat = latitude;
+      this._userLng = longitude;
+
+      this.nearby = await this.venueService.list({
+        lat: latitude,
+        lng: longitude,
+        radiusKm: 10,
+      });
+      this.showingNearby = true;
+      this.filteredVenues = [...this.nearby];
+
+      this.applySearch();
+      await this.initMap();
+    } catch (error: any) {
+      this.locationError =
+        error?.message || 'Unable to determine your location. Please allow location access.';
+    } finally {
+      this.locationLoading = false;
+    }
+  }
+
+  async searchMapVenues() {
     if (this._userLat == null || this._userLng == null) {
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((res, rej) =>
-            navigator.geolocation.getCurrentPosition(res, rej)
-          );
-          this._userLat = pos.coords.latitude;
-          this._userLng = pos.coords.longitude;
-        } catch (e) {
-          this.locationError = 'Please allow location access to find nearby venues.';
-          this.locationLoading = false;
-          return;
-        }
-      } else {
-        this.locationError = 'Geolocation is not supported by your browser.';
-        this.locationLoading = false;
-        return;
-      }
+      this.locationError = 'Please allow location access first by clicking Use my location.';
+      return;
     }
 
     try {
@@ -113,18 +126,23 @@ export class HomePageComponent implements OnInit {
       const request = {
         location: { lat: this._userLat, lng: this._userLng },
         radius: 10000,
-        keyword: 'sports complex',
+        keyword: 'sports complex|court|stadium|arena',
       };
+
+      console.log('Google Places search request:', request);
 
       const results: any[] = await new Promise((resolve, reject) => {
         service.nearbySearch(request, (places: any, status: any) => {
-          if (status === 'OK') {
-            resolve(places);
+          console.log('Google Places response:', { status, placesCount: places?.length });
+          if (status === (window as any).google.maps.places.PlacesServiceStatus.OK) {
+            resolve(places || []);
           } else {
             reject(status);
           }
         });
       });
+
+      console.log('Processing', results.length, 'places from Google Maps');
 
       this.nearby = results.map((place) => ({
         id: place.place_id,
@@ -137,6 +155,8 @@ export class HomePageComponent implements OnInit {
         distance: this.distanceKm(this._userLat ?? 0, this._userLng ?? 0, place.geometry?.location?.lat?.() ?? 0, place.geometry?.location?.lng?.() ?? 0),
         games_available: ['Basketball', 'Tennis', 'Soccer', 'Volleyball'],
       }));
+
+      console.log('Mapped venues:', this.nearby);
 
       this.showingNearby = true;
       this.filteredVenues = [...this.nearby];
