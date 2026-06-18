@@ -367,13 +367,20 @@ export class ChatComponent implements OnInit, OnDestroy {
     );
 
     return sorted.map((msg, i) => {
+      // System messages render as event dividers — skip bubble logic
+      if (msg.is_system) {
+        return { ...msg, showDate: false, showAvatar: false };
+      }
+
       const prev = sorted[i - 1];
-      const msgDay = this.toLocalDateStr(msg.created_at);
-      const prevDay = prev ? this.toLocalDateStr(prev.created_at) : null;
+      // Skip system messages when computing date/avatar grouping
+      const prevReal = sorted.slice(0, i).reverse().find(m => !m.is_system);
+      const msgDay   = this.toLocalDateStr(msg.created_at);
+      const prevDay  = prevReal ? this.toLocalDateStr(prevReal.created_at) : null;
       const showDate = !prevDay || prevDay !== msgDay;
       const showAvatar =
         msg.sender_id !== this.currentUserId &&
-        (!prev || prev.sender_id !== msg.sender_id || showDate);
+        (!prevReal || prevReal.sender_id !== msg.sender_id || showDate);
       return {
         ...msg,
         showDate,
@@ -413,6 +420,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   isMine(msg: ChatMessage): boolean {
+    if (!msg.sender_id) return false; // system messages have no sender
     return msg.sender_id === this.currentUserId;
   }
 

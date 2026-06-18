@@ -51,7 +51,7 @@ router.get("/received", async (req: Request, res: Response) => {
     .select(`
       id, sport, message, status, created_at,
       sender_id,
-      profiles!player_challenges_sender_id_fkey(id, username, first_name, last_name, rating, player_location_label)
+      profiles!player_challenges_sender_id_fkey(id, username, first_name, last_name, skill_level, player_location_label)
     `)
     .eq("receiver_id", userId)
     .order("created_at", { ascending: false });
@@ -80,7 +80,7 @@ router.get("/sent", async (req: Request, res: Response) => {
     .select(`
       id, sport, message, status, created_at,
       receiver_id,
-      profiles!player_challenges_receiver_id_fkey(id, username, first_name, last_name, rating, player_location_label)
+      profiles!player_challenges_receiver_id_fkey(id, username, first_name, last_name, skill_level, player_location_label)
     `)
     .eq("sender_id", userId)
     .order("created_at", { ascending: false });
@@ -131,12 +131,34 @@ router.put("/:id/status", async (req: Request, res: Response) => {
     .from("player_challenges")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .select()
+    .select("id, sport, status")
     .single();
 
   if (error) {
     console.error("[PUT /api/challenges/status]", error.message);
     return res.status(500).json({ success: false, message: error.message });
+  }
+
+  // Insert a system event message into the chat thread
+  try {
+    const sportLabel = data.sport
+      ? data.sport.charAt(0).toUpperCase() + data.sport.slice(1)
+      : "Match";
+    const eventLabel =
+      status === "accepted"
+        ? `${sportLabel} Match Accepted`
+        : `${sportLabel} Match Declined`;
+
+    await supabase.from("chat_messages").insert({
+      challenge_id: id,
+      sender_id:    null,           // system — no sender
+      content:      eventLabel,
+      is_system:    true,
+      event_type:   `challenge_${status}`, // "challenge_accepted" | "challenge_rejected"
+    });
+  } catch (sysMsgErr) {
+    // Non-fatal — don't fail the status update if system message insert fails
+    console.warn("[system message insert]", sysMsgErr);
   }
 
   return res.json({ success: true, data });

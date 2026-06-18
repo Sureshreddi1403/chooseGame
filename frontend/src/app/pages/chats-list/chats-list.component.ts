@@ -279,7 +279,6 @@ export class ChatsListComponent implements OnInit {
 
   loadChats(userId: string) {
     this.loading.set(true);
-    // Load both received and sent, merge, filter accepted
     const received: Challenge[] = [];
     const sent: Challenge[] = [];
 
@@ -289,13 +288,28 @@ export class ChatsListComponent implements OnInit {
         this.challengeService.getSentChallenges(userId).subscribe({
           next: (r) => {
             sent.push(...(r.data || []).filter(c => c.status === 'accepted'));
-            // Deduplicate by id
-            const map = new Map<string, Challenge>();
-            [...received, ...sent].forEach(c => map.set(c.id, c));
-            const all = Array.from(map.values()).sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            this.activeChats.set(all);
+
+            // Merge and deduplicate by challenge id
+            const byId = new Map<string, Challenge>();
+            [...received, ...sent].forEach(c => byId.set(c.id, c));
+
+            // Group by opponent user ID — keep most recent challenge per person
+            const byOpponent = new Map<string, Challenge>();
+            Array.from(byId.values())
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .forEach(c => {
+                // Determine the opponent's user id for this challenge
+                const opponentId = c.sender_id && c.sender_id !== userId
+                  ? c.sender_id
+                  : (c.receiver_id || c.profiles?.id || '');
+                if (!opponentId) return;
+                // First entry per opponent wins (most recent, due to sort above)
+                if (!byOpponent.has(opponentId)) {
+                  byOpponent.set(opponentId, c);
+                }
+              });
+
+            this.activeChats.set(Array.from(byOpponent.values()));
             this.loading.set(false);
           },
           error: () => { this.activeChats.set(received); this.loading.set(false); }

@@ -5,9 +5,11 @@ import { environment } from '../../../environments/environment';
 
 export interface ChatMessage {
   id: string;
-  sender_id: string;
+  sender_id: string | null;   // null for system messages
   content: string;
   created_at: string;
+  is_system?: boolean;
+  event_type?: string;        // e.g. "challenge_accepted" | "challenge_rejected"
 }
 
 export interface ChatMessagesResponse {

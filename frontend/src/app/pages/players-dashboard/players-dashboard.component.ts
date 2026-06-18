@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -40,7 +40,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
   selectedDistance = signal(0); // 0 = any
   players = signal<Player[]>([]);
   selectedPlayer = signal<Player | null>(null);
-  searchQuery = '';
+  searchQuery = signal('');
 
   /* ── Challenge Modal ── */
   showChallengeModal = signal(false);
@@ -83,23 +83,38 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
     { label: '< 100 km',     value: 100 },
   ];
 
-  get filteredPlayers(): Player[] {
-    const q = this.searchQuery.trim().toLowerCase();
+  /** computed() — reacts to signals: players, searchQuery, selectedDistance */
+  filteredPlayers = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
     const maxDist = this.selectedDistance();
     return this.players().filter(p => {
-      // text search
       const matchesText = !q ||
         p.username.toLowerCase().includes(q) ||
         (p.sport_preferences || []).some(s => s.toLowerCase().includes(q)) ||
         (p.skill_level || '').toLowerCase().includes(q);
-      // distance filter
-      const matchesDist = maxDist === 0 || (p.distanceKm != null && p.distanceKm <= maxDist);
+      // If maxDist is 0 (Any) or player has no distance data, pass through
+      const matchesDist = maxDist === 0 ||
+        p.distanceKm == null ||          // no location data → don’t hide
+        p.distanceKm <= maxDist;
       return matchesText && matchesDist;
     });
-  }
+  });
 
   get activeSportLabel(): string {
     return this.sports.find(s => s.value === this.selectedSport())?.label || 'All Sports';
+  }
+
+  /** Returns the sport to display on each player card.
+   *  When a sport filter is active, shows the filtered sport (so the user can see WHY
+   *  this player appeared). Falls back to the player's primary (first) sport for "All Sports". */
+  displaySport(p: Player): string {
+    const active = this.selectedSport();
+    if (active && active !== 'all') {
+      // Confirm player actually has this sport (they should — API filtered them)
+      const prefs = p.sport_preferences || [];
+      if (prefs.includes(active)) return active;
+    }
+    return (p.sport_preferences || [])[0] || '';
   }
 
   primarySport(p: Player): string {
@@ -271,7 +286,7 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
             <div style="font-family:Inter,sans-serif;padding:8px 4px;min-width:140px">
               <strong style="color:#0f172a">${p.username}</strong>
               <p style="margin:4px 0 2px;color:#64748b;font-size:13px;text-transform:capitalize">${(p.sport_preferences || []).join(', ') || 'N/A'}</p>
-              <p style="margin:0;color:#1d4ed8;font-size:13px;font-weight:700">⭐ ${p.rating || 'N/A'}</p>
+              ${p.skill_level ? `<p style="margin:0;color:#7c3aed;font-size:13px;font-weight:700">${p.skill_level.charAt(0).toUpperCase() + p.skill_level.slice(1)}</p>` : ''}
               ${p.distanceKm != null ? `<p style="margin:4px 0 0;color:#475569;font-size:12px">📍 ${p.distanceKm.toFixed(1)} km away</p>` : ''}
             </div>`,
         });
@@ -332,10 +347,6 @@ export class PlayersDashboardComponent implements OnInit, OnDestroy {
 
   deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
-  }
-
-  starArray(rating: number): number[] {
-    return Array.from({ length: 5 }, (_, i) => i);
   }
 
   sportIcon(sport: string): string {

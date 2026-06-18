@@ -408,25 +408,6 @@
   margin-bottom: 4px;
 }
 
-.star-row {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.star {
-  color: #cbd5e1;
-  font-size: 0.85rem;
-  &.filled { color: #f59e0b; }
-}
-
-.rating-val {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--slate-700);
-  margin-left: 4px;
-}
-
 .record {
   font-size: 0.8rem;
   color: var(--slate-500);

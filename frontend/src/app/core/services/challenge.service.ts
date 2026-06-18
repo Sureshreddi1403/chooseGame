@@ -15,7 +15,7 @@ export interface PlayerProfileRef {
   username: string;
   first_name: string;
   last_name: string;
-  rating?: number;
+  skill_level?: string;
   player_location_label?: string;
 }
 

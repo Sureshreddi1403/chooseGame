@@ -69,12 +69,23 @@
     <ng-container *ngFor="let msg of messages(); trackBy: trackById">
 
       <!-- Date divider -->
-      <div class="date-divider" *ngIf="msg.showDate">
+      <div class="date-divider" *ngIf="msg.showDate && !msg.is_system">
         <span>{{ msg.dateLabel }}</span>
       </div>
 
-      <!-- Message row -->
-      <div class="msg-row" [class.mine]="isMine(msg)" [class.optimistic]="msg.optimistic">
+      <!-- ── System event divider (challenge accepted / declined) ── -->
+      <div class="system-event" *ngIf="msg.is_system" [class.accepted]="msg.event_type === 'challenge_accepted'" [class.declined]="msg.event_type === 'challenge_rejected'">
+        <div class="sys-line"></div>
+        <div class="sys-pill">
+          <span class="sys-icon">{{ msg.event_type === 'challenge_accepted' ? '✅' : '❌' }}</span>
+          <span class="sys-text">{{ msg.content }}</span>
+          <span class="sys-time">{{ formatTime(msg.created_at) }}</span>
+        </div>
+        <div class="sys-line"></div>
+      </div>
+
+      <!-- ── Regular message row ── -->
+      <div class="msg-row" *ngIf="!msg.is_system" [class.mine]="isMine(msg)" [class.optimistic]="msg.optimistic">
 
         <!-- Opponent avatar (only shown on first of a group) -->
         <div class="msg-avatar" *ngIf="!isMine(msg)">

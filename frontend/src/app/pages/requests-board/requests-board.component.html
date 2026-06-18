@@ -51,9 +51,12 @@
               <div class="cc-avatar">{{ req.profiles?.username?.slice(0,2) | uppercase }}</div>
               <div class="cc-user-info">
                 <strong>{{ req.profiles?.username }}</strong>
-                <span class="cc-meta">
-                  ⭐ {{ req.profiles?.rating || 'N/A' }} 
-                  <span *ngIf="req.profiles?.player_location_label"> · {{ req.profiles?.player_location_label }}</span>
+                <span class="cc-meta" *ngIf="req.profiles as p">
+                  <span class="skill-tag" *ngIf="p.skill_level">{{ p.skill_level | titlecase }}</span>
+                  <span *ngIf="p.player_location_label">
+                    <ng-container *ngIf="p.skill_level"> · </ng-container>
+                    {{ p.player_location_label }}
+                  </span>
                 </span>
               </div>
             </div>
@@ -95,6 +98,13 @@
               <div class="cc-user-info">
                 <span class="to-label">To:</span>
                 <strong>{{ req.profiles?.username }}</strong>
+                <span class="cc-meta" *ngIf="req.profiles as p">
+                  <span class="skill-tag" *ngIf="p.skill_level">{{ p.skill_level | titlecase }}</span>
+                  <span *ngIf="p.player_location_label">
+                    <ng-container *ngIf="p.skill_level"> · </ng-container>
+                    {{ p.player_location_label }}
+                  </span>
+                </span>
               </div>
             </div>
             <span class="status-badge" [ngClass]="req.status">{{ req.status | uppercase }}</span>

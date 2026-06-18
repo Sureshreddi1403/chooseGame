@@ -17,16 +17,18 @@ router.put("/presence", async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: "userId is required." });
   }
 
-  const { error } = await supabase
-    .from("user_presence")
-    .upsert(
-      { user_id: userId, last_seen_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-
-  if (error) {
-    console.error("[PUT /api/chat/presence]", error.message);
-    return res.status(500).json({ success: false, message: error.message });
+  try {
+    const { error } = await supabase
+      .from("user_presence")
+      .upsert(
+        { user_id: userId, last_seen_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+    if (error) {
+      console.warn("[PUT /presence] user_presence not available:", error.message);
+    }
+  } catch (e: any) {
+    console.warn("[PUT /presence] unexpected error:", e?.message);
   }
 
   return res.json({ success: true });
@@ -38,18 +40,22 @@ router.put("/presence", async (req: Request, res: Response) => {
 router.get("/presence/:userId", async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const { data, error } = await supabase
-    .from("user_presence")
-    .select("last_seen_at")
-    .eq("user_id", userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("user_presence")
+      .select("last_seen_at")
+      .eq("user_id", userId)
+      .single();
 
-  if (error) {
-    // If no row exists, user has never been seen
+    if (error) {
+      // No row yet OR table doesn't exist — both mean no presence data
+      return res.json({ success: true, data: { last_seen_at: null } });
+    }
+
+    return res.json({ success: true, data });
+  } catch (e: any) {
     return res.json({ success: true, data: { last_seen_at: null } });
   }
-
-  return res.json({ success: true, data });
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -161,30 +167,35 @@ router.put("/:challengeId/read", async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: "userId is required." });
   }
 
-  const { data: challenge, error: cErr } = await supabase
-    .from("player_challenges")
-    .select("sender_id, receiver_id")
-    .eq("id", challengeId)
-    .single();
+  try {
+    const { data: challenge, error: cErr } = await supabase
+      .from("player_challenges")
+      .select("sender_id, receiver_id")
+      .eq("id", challengeId)
+      .single();
 
-  if (cErr || !challenge) {
-    return res.status(404).json({ success: false, message: "Challenge not found." });
-  }
+    if (cErr || !challenge) {
+      return res.status(404).json({ success: false, message: "Challenge not found." });
+    }
 
-  if (challenge.sender_id !== userId && challenge.receiver_id !== userId) {
-    return res.status(403).json({ success: false, message: "Not authorized." });
-  }
+    if (challenge.sender_id !== userId && challenge.receiver_id !== userId) {
+      return res.status(403).json({ success: false, message: "Not authorized." });
+    }
 
-  const { error } = await supabase
-    .from("chat_read_receipts")
-    .upsert(
-      { challenge_id: challengeId, user_id: userId, last_read_at: new Date().toISOString() },
-      { onConflict: "challenge_id,user_id" }
-    );
+    const { error } = await supabase
+      .from("chat_read_receipts")
+      .upsert(
+        { challenge_id: challengeId, user_id: userId, last_read_at: new Date().toISOString() },
+        { onConflict: "challenge_id,user_id" }
+      );
 
-  if (error) {
-    console.error("[PUT /api/chat/read]", error.message);
-    return res.status(500).json({ success: false, message: error.message });
+    if (error) {
+      // Gracefully handle if migration 008 hasn't been run yet
+      console.warn("[PUT /read] chat_read_receipts not available:", error.message);
+      return res.json({ success: true, warning: "read receipts not available" });
+    }
+  } catch (e: any) {
+    console.warn("[PUT /read] unexpected error:", e?.message);
   }
 
   return res.json({ success: true });
@@ -201,31 +212,36 @@ router.get("/:challengeId/read-status", async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: "userId is required." });
   }
 
-  const { data: challenge, error: cErr } = await supabase
-    .from("player_challenges")
-    .select("sender_id, receiver_id")
-    .eq("id", challengeId)
-    .single();
+  try {
+    const { data: challenge, error: cErr } = await supabase
+      .from("player_challenges")
+      .select("sender_id, receiver_id")
+      .eq("id", challengeId)
+      .single();
 
-  if (cErr || !challenge) {
-    return res.status(404).json({ success: false, message: "Challenge not found." });
+    if (cErr || !challenge) {
+      return res.status(404).json({ success: false, message: "Challenge not found." });
+    }
+
+    if (challenge.sender_id !== userId && challenge.receiver_id !== userId) {
+      return res.status(403).json({ success: false, message: "Not authorized." });
+    }
+
+    const { data, error } = await supabase
+      .from("chat_read_receipts")
+      .select("user_id, last_read_at")
+      .eq("challenge_id", challengeId);
+
+    if (error) {
+      console.warn("[GET /read-status] chat_read_receipts not available:", error.message);
+      return res.json({ success: true, data: [] });
+    }
+
+    return res.json({ success: true, data: data || [] });
+  } catch (e: any) {
+    console.warn("[GET /read-status] unexpected error:", e?.message);
+    return res.json({ success: true, data: [] });
   }
-
-  if (challenge.sender_id !== userId && challenge.receiver_id !== userId) {
-    return res.status(403).json({ success: false, message: "Not authorized." });
-  }
-
-  const { data, error } = await supabase
-    .from("chat_read_receipts")
-    .select("user_id, last_read_at")
-    .eq("challenge_id", challengeId);
-
-  if (error) {
-    console.error("[GET /api/chat/read-status]", error.message);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-
-  return res.json({ success: true, data: data || [] });
 });
 
 export default router;

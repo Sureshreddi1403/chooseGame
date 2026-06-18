@@ -354,6 +354,80 @@
   }
 }
 
+/* ── System Event Divider ───────────────────────────────────────── */
+.system-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 12px 16px;
+  animation: sys-fade-in 0.4s ease both;
+
+  .sys-line {
+    flex: 1;
+    height: 1px;
+    border-radius: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  }
+
+  .sys-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+
+  .sys-icon { font-size: 0.88rem; }
+
+  .sys-text {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .sys-time {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.35);
+    margin-left: 4px;
+  }
+
+  /* Accepted — green tint */
+  &.accepted {
+    .sys-line {
+      background: linear-gradient(90deg, transparent, rgba(52,211,153,0.25), transparent);
+    }
+    .sys-pill {
+      background: rgba(16,185,129,0.1);
+      border-color: rgba(52,211,153,0.25);
+    }
+    .sys-text { color: #6ee7b7; }
+  }
+
+  /* Declined — red tint */
+  &.declined {
+    .sys-line {
+      background: linear-gradient(90deg, transparent, rgba(248,113,113,0.25), transparent);
+    }
+    .sys-pill {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(248,113,113,0.2);
+    }
+    .sys-text { color: #fca5a5; }
+  }
+}
+
+@keyframes sys-fade-in {
+  from { opacity: 0; transform: scaleX(0.85); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+
 /* ── Message Row ──────────────────────────────────────── */
 .msg-row {
   display: flex;

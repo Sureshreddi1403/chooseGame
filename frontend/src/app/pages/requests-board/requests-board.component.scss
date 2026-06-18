@@ -186,6 +186,7 @@
 
 .cc-avatar {
   width: 48px; height: 48px;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   border-radius: 50%;
@@ -199,8 +200,25 @@
   display: flex;
   flex-direction: column;
   strong { font-size: 1.1rem; color: #0f172a; }
-  .cc-meta { font-size: 0.85rem; color: #64748b; margin-top: 2px; }
+  .cc-meta { 
+    font-size: 0.85rem; 
+    color: #64748b; 
+    margin-top: 4px;
+    line-height: 1.4;
+  }
   .to-label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+}
+
+.skill-tag {
+  background: #f3e8ff;
+  color: #7e22ce;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
 }
 
 .status-badge {
